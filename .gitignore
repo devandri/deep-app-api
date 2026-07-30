@@ -1,0 +1,104 @@
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Compiled extensions
+*.so
+
+# ===========================
+# Virtual Environment
+# ===========================
+.venv/
+venv/
+env/
+ENV/
+
+# ===========================
+# Environment Variables
+# ===========================
+.env
+.env.*
+!.env.example
+
+# ===========================
+# Django
+# ===========================
+*.log
+db.sqlite3
+db.sqlite3-journal
+
+media/
+staticfiles/
+
+# If you generate static files during deployment
+static/
+
+# ===========================
+# Migrations
+# ===========================
+# Keep migrations in Git!
+# Ignore only compiled Python files
+**/migrations/__pycache__/
+**/migrations/*.pyc
+
+# ===========================
+# Pytest
+# ===========================
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ===========================
+# mypy
+# ===========================
+.mypy_cache/
+
+# ===========================
+# Ruff
+# ===========================
+.ruff_cache/
+
+# ===========================
+# Pyre
+# ===========================
+.pyre/
+
+# ===========================
+# IDE
+# ===========================
+.vscode/
+.idea/
+
+# ===========================
+# macOS
+# ===========================
+.DS_Store
+
+# ===========================
+# Jupyter
+# ===========================
+.ipynb_checkpoints/
+
+# ===========================
+# Build
+# ===========================
+build/
+dist/
+*.egg-info/
+
+# ===========================
+# Logs
+# ===========================
+logs/
+*.log
+
+# ===========================
+# Temporary files
+# ===========================
+*.tmp
+*.swp
+*.swo
