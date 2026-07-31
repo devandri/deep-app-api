@@ -17,6 +17,22 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from ninja import NinjaAPI
+
+from accounts.api import router as account_router
+
+api = NinjaAPI(
+    title="My API",
+    version="1.0.0",
+    docs_url="/docs",
+)
+
+api.add_router(
+    "/users/",
+    account_router,
+)
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
+    path("api/", api.urls),
 ]
