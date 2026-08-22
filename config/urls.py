@@ -21,6 +21,8 @@ from ninja import NinjaAPI
 
 from accounts.api import router as account_router
 
+from django.views.generic import RedirectView
+
 api = NinjaAPI(
     title="My API",
     version="1.0.0",
@@ -35,4 +37,5 @@ api.add_router(
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", api.urls),
+    path("", RedirectView.as_view(url="api/docs", permanent=False)),
 ]
