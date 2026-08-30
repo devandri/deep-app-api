@@ -160,7 +160,7 @@ REST_FRAMEWORK = {
 
 # JWT Settings
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Token berlaku 15 menit
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Token berlaku 60 menit
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Refresh token berlaku 1 hari
     'ROTATE_REFRESH_TOKENS': True,                   # Rotasi refresh token
     'BLACKLIST_AFTER_ROTATION': True,                # Blacklist setelah rotasi

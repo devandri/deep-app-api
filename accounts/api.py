@@ -4,6 +4,7 @@ from ninja.security import HttpBearer
 from .models import User
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken, ExpiredTokenError
+from .serializers import UserSerializer
 
 from .schemas import (
     UserCreateSchema, UserUpdateSchema, UserResponseSchema,
@@ -102,10 +103,13 @@ def refresh_token(request, payload: RefreshTokenSchema):
     """Refresh access token menggunakan refresh token"""
     try:
         refresh = RefreshToken(payload.refresh)
+        user_id = refresh.payload.get("user_id")
+        user = User.objects.get(id=user_id)
+        user_data = UserSerializer(user).data
         return {
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "user": None
+            "user": user_data,
         }
     except TokenError:
         return 401, {"error": "Invalid refresh token"}
