@@ -14,44 +14,41 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+# config/urls.py
 from django.contrib import admin
-from django.urls import path, include
-
+from django.urls import path
 from ninja import NinjaAPI
+from accounts.api import auth_router, users_router
 
-from accounts.api import router as account_router
-
-from django.views.generic import RedirectView
-
-# from rest_framework_simplejwt.views import (
-#     TokenObtainPairView,
-#     TokenRefreshView,
-# )
+# ============ NINJA API SETUP ============
 
 api = NinjaAPI(
-    title="My API",
+    title="DeepApp API",
     version="1.0.0",
-    docs_url="/docs",
+    description="""
+    # DeepApp API Documentation
+    
+    ## 🔐 Authentication
+    API ini menggunakan JWT (JSON Web Token) untuk autentikasi.
+    
+    ### Cara Mendapatkan Token:
+    1. **Registrasi**: `POST /api/auth/register`
+    2. **Login**: `POST /api/auth/login`
+    3. **Gunakan Token**: `Authorization: Bearer <access_token>`
+    
+    ## 📚 Endpoint Groups
+    - **Authentication** (`/api/auth/*`) - Login, Register, Refresh, Logout
+    - **Users** (`/api/users/*`) - CRUD Users (🔒 Protected)
+    """,
+    docs_url="/docs",          # Swagger UI
+    openapi_url="/openapi.json", # OpenAPI Schema
 )
 
-api.add_router(
-    "/users/",
-    account_router,
-)
+# Register routers
+api.add_router("/auth/", auth_router)   # /api/auth/*
+api.add_router("/users/", users_router) # /api/users/*
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", api.urls),
-    path("", RedirectView.as_view(url="api/docs", permanent=False)),
-    path('api/', include('accounts.urls')),
-    # path(
-    #     "api/auth/token/",
-    #     TokenObtainPairView.as_view(),
-    #     name="token_obtain_pair",
-    # ),
-    # path(
-    #     "api/auth/token/refresh/",
-    #     TokenRefreshView.as_view(),
-    #     name="token_refresh",
-    # ),
+    path('admin/', admin.site.urls),
+    path('api/', api.urls),  # Base API: /api/
 ]
