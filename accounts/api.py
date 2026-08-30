@@ -3,7 +3,7 @@ from ninja import Router, Body
 from ninja.security import HttpBearer
 from .models import User
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken, ExpiredTokenError
 
 from .schemas import (
     UserCreateSchema, UserUpdateSchema, UserResponseSchema,
@@ -29,6 +29,8 @@ class AuthBearer(HttpBearer):
             user_id = access_token.payload.get('user_id')
             user = User.objects.get(id=user_id)
             return user
+        except ExpiredTokenError:
+            return None
         except (InvalidToken, User.DoesNotExist):
             return None
 
