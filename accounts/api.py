@@ -15,12 +15,13 @@ from .schemas import (
     LoginSchema, RegisterSchema, RefreshTokenSchema, LogoutSchema,
     TokenResponseSchema, ErrorResponseSchema, SuccessResponseSchema,
     UserSoftDeleteResponse, UserRestoreResponse, DeleteMultipleRequest,
-    UserDetailSchema
+    UserDetailSchema, BaseResponse
 )
 from .services import (
     get_users, get_user, create_user, update_user, delete_user,
     authenticate_user, generate_tokens, blacklist_token,
 )
+from .resources import UserResource, UserDetailResource
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -140,28 +141,20 @@ def logout(request, payload: LogoutSchema = Body(None)):
     
     return {"success": True, "message": "Successfully logged out"}
 
-
+# TODO: current task
 @auth_router.get(
     "/me",
-    response={200: dict, 401: ErrorResponseSchema},
+    response={200: BaseResponse, 401: ErrorResponseSchema},
     auth=AuthBearer(),
     summary="Get current user profile",
 )
 def get_current_user(request):
     """Mendapatkan data user yang sedang login"""
     user = request.auth
-    return {
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "is_active": user.is_active,
-        "is_staff": user.is_staff,
-        "is_superuser": user.is_superuser,
-        "date_joined": user.date_joined.isoformat() if user.date_joined else None,
-        "last_login": user.last_login.isoformat() if user.last_login else None,
-    }
+    return BaseResponse.success(
+        data=UserResource.make(user),
+        message="Profile retrieved successfully"
+    )
 
 
 # ========================================

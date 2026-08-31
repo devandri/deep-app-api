@@ -1,7 +1,33 @@
 # accounts/schemas.py
 from ninja import Schema
-from typing import Optional
+from typing import Optional, TypeVar, Generic, Any
 from datetime import datetime
+
+T = TypeVar('T')
+
+class BaseResponse(Schema, Generic[T]):
+    status: str = "success"
+    message: str = ""
+    data: Optional[T] = None
+    timestamp: str = None
+    
+    @staticmethod
+    def success(data: Any = None, message: str = "Success") -> dict:
+        return {
+            "status": "success",
+            "message": message,
+            "data": data,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
+        
+    @staticmethod
+    def error(message: str = "Error", code: str = None) -> dict:
+        return {
+            "status": "error",
+            "message": message,
+            "code": code,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
 
 # ============ REQUEST SCHEMAS ============
 
