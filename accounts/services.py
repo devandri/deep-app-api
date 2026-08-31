@@ -1,13 +1,183 @@
 # accounts/services.py
 from .models import User
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.db.models import Q
 from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from .schemas import UserCreateSchema, UserUpdateSchema
+import logging
+from django.utils import timezone
 
+logger = logging.getLogger(__name__)
+User = get_user_model()
+
+class UserService:
+    
+    @staticmethod
+    def soft_delete_user(user_id: int, deleted_by_id: Optional[int] = None) -> Dict[str, Any]:
+        
+        try:
+            user = User.objects.get(id=user_id)
+            
+            if user.is_deleted:
+                raise ValueError(f"User {user_id} is already deleted")
+            
+            if user.is_superuser:
+                raise PermissionError("Cannot delete superuser")
+
+            username = user.username
+            email = user.email
+            
+            user.delete()
+            
+            log_message = {
+                f"User {username} (ID: {user_id}, Email: {email}) "
+                f"soft deleted by user ID: {deleted_by_id or 'system'}"
+            }
+            logger.info(log_message)
+
+            return {
+                'success': True,
+                'user_id': user_id,
+                'username': username,
+                'deleted_at': user.deleted_at,
+                'message': f"User {username} soft deleted successfully"
+            }
+            
+        except User.DoesNotExist:
+            logger.warning(f"Attempt to delete non-existent user ID: {user_id}")
+            raise
+        
+        except ValueError as e:
+            logger.warning(f"Delete failed for user {user_id}: {str(e)}")
+            raise
+        
+        except PermissionError as e:
+            logger.warning(f"Permission denied for user {user_id}: {str(e)}")
+            raise
+        
+        except Exception as e:
+            logger.error(f"Unexpected error deleting user {user_id}: {str(e)}", exc_info=True)
+            raise
+        
+    @staticmethod
+    def restore_user(user_id: int, restored_by_id: Optional[int] = None) -> Dict[str, Any]:
+        
+        try:
+            user = User.all_objects.get(id=user_id)
+            
+            if not user.is_deleted:
+                raise ValueError(f"User {user_id} is not deleted")
+            
+            user.restore()
+            
+            logger.info(
+                f"User {user.username} (ID: {user_id}) "
+                f"restored by user ID: {restored_by_id or 'system'}"
+            )
+            
+            return {
+                'success': True,
+                'user_id': user_id,
+                'username': user.username,
+                'restored_at': timezone.now(),
+                'message': f"User {user.username} restored successfully"
+            }
+            
+        except User.DoesNotExist:
+            logger.warning(f"Attempt to restore non-existent user ID: {user_id}")
+            raise
+        
+        except ValueError as e:
+            logger.warning(f"Restore failed for user {user_id}: {str(e)}")
+            raise
+        
+        except Exception as e:
+            logger.error(f"Unexpected error restoring user {user_id}: {str(e)}", exc_info=True)
+            raise
+        
+    def hard_delete_user(user_id: int, deleted_by_id: Optional[int] = None) -> Dict[str, Any]:
+        
+        try:
+            user = User.all_objects.get(id=user_id)
+            
+            username = user.username
+            
+            user.hard_delete()
+            
+            logger.warning(
+                f"User {username} (ID: {user_id}) "
+                f"permanently deleted by user ID: {deleted_by_id or 'system'}"
+            )
+            
+            return {
+                'success': True,
+                'user_id': user_id,
+                'username': username,
+                'message': f"User {username} permanently deleted"
+            }
+            
+        except User.DoesNotExist:
+            logger.warning(f"Attempt to hard delete non-existent user ID: {user_id}")
+            raise
+        
+        except Exception as e:
+            logger.error(f"Unexcpected error hard deleteing user {user_id}: {str(e)}", exc_info=True)
+            raise
+        
+    @staticmethod
+    def delete_multiple_users(user_ids: List[int], deleted_by_id: Optional[int] = None) -> Dict[str, Any]:
+        
+        results = {
+            'success': [],
+            'failed': [],
+            'total': len(user_ids)
+        }
+        
+        for user_id in user_ids:
+            try:
+                result = UserService.soft_delete_user(user_id, deleted_by_id)
+                results['success'].append({
+                    'user_id': user_id,
+                    'username': result['username']
+                })
+            except Exception as e:
+                results['failed'].append({
+                    'user_id': user_id,
+                    'error': str(e)
+                })
+                
+        return {
+            'success': True,
+            'results': results,
+            'message': f"Deleted {len(results['success'])} of {len(user_ids)} users"
+        }
+        
+    @staticmethod
+    def get_deleted_users() -> List[User]:
+        return User.all_objects.filter(deleted_at__isnull=False).order_by('-deleted_at')
+
+    @staticmethod
+    def get_user_detail(user_id: int) -> Optional[User]:
+        try:
+            return User.all_objects.get(id=user_id)
+        except User.DoesNotExist:
+            return None
+        
+    @staticmethod
+    def is_user_deleted(user_id: int) -> bool:
+        try:
+            user = User.all_objects.get(id=user_id)
+            return user.is_deleted
+        except User.DoesNotExist:
+            return False
+        
+# Overwrite existing function "delete_user" before soft deleted
+def delete_user(user_id: int) -> None:
+    UserService.soft_delete_user(user_id)
+        
 # ============ USER SERVICES ============
 
 def get_users() -> List[User]:

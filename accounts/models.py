@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.utils import timezone
 
 class SoftDeleteQuerySet(models.QuerySet):
@@ -17,7 +17,7 @@ class SoftDeleteQuerySet(models.QuerySet):
     def only_deleted(self):
         return self.filter(deleted_at__isnull=False)
     
-class SoftDeleteManager(models.Manager):
+class SoftDeleteManager(UserManager):
     """Manager that by automatically filtering soft delete"""
 
     def get_queryset(self):

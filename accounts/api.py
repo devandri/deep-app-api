@@ -5,16 +5,27 @@ from .models import User
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken, ExpiredTokenError
 from .serializers import UserSerializer
+import logging
+from django.contrib.auth import get_user_model
+from .services import UserService
+from typing import List
+from .auth import AuthBearer
 
 from .schemas import (
     UserCreateSchema, UserUpdateSchema, UserResponseSchema,
     LoginSchema, RegisterSchema, RefreshTokenSchema, LogoutSchema,
     TokenResponseSchema, ErrorResponseSchema, SuccessResponseSchema,
+    UserSoftDeleteResponse, UserRestoreResponse, DeleteMultipleRequest,
+    UserDetailSchema
 )
 from .services import (
     get_users, get_user, create_user, update_user, delete_user,
     authenticate_user, generate_tokens, blacklist_token,
 )
+
+logger = logging.getLogger(__name__)
+UserAuth = get_user_model()
+
 
 # ============ ROUTERS ============
 
@@ -23,7 +34,7 @@ users_router = Router(tags=["Users"])
 
 # ============ AUTHENTICATION CLASS ============
 
-class AuthBearer(HttpBearer):
+class _old_AuthBearer(HttpBearer):
     def authenticate(self, request, token: str):
         try:
             access_token = AccessToken(token)
@@ -214,7 +225,7 @@ def update(request, user_id: int, payload: UserUpdateSchema):
         return 404, {"error": "User not found"}
 
 @users_router.delete(
-    "/{user_id}",
+    "/{user_id}/old",
     response={200: SuccessResponseSchema, 401: ErrorResponseSchema, 404: ErrorResponseSchema},
     auth=AuthBearer(),
     summary="Delete user",
@@ -225,3 +236,313 @@ def delete(request, user_id: int):
         return {"success": True, "message": f"User {user_id} deleted successfully"}
     except User.DoesNotExist:
         return 404, {"error": "User not found"}
+    
+@users_router.delete(
+    "/{user_id}",
+    response={
+        200: UserSoftDeleteResponse,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+    },
+    auth=AuthBearer(),
+    summary="Soft delete user",
+    description="""
+    description
+    """
+)
+def delete_user_endpoint(request, user_id: int):
+    """
+    Soft delete user
+    """
+    try:
+        if not request.user.is_staff:
+            return 403, {
+                "error": "Permission denied",
+                "code": "permission_denied",
+                "message": "Only admin can delete users"
+            }
+            
+        if request.user.id == user_id:
+            return 400, {
+                "error": "Cannot delete yourself",
+                "code": "self_delete",
+                "message": "You cannot delete your own account"
+            }
+            
+        result = UserService.soft_delete_user(
+            user_id=user_id,
+            deleted_by_id=request.user.id
+        )
+        
+        return 200, {
+            "success": True,
+            "message": result['message'],
+            "user_id": result['user_id'],
+            "username": result['username'],
+            "deleted_at": result['deleted_at']
+        }
+        
+    except User.DoesNotExist:
+        return 404, {
+            "error": "User not found",
+            "code": "user_not_found"
+        }
+        
+    except ValueError as e:
+        return 400, {
+            "error": str(e),
+            "code": "already_deleted"
+        }
+        
+    except ValueError as e:
+        return 403, {
+            "error": str(e),
+            "code": "permission_denied"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error deleting user {user_id}: {e}", exc_info=True)
+        return 500, {
+            "error": "Internal server error",
+            "code": "server_error"
+        }
+        
+
+@users_router.post(
+    "/{user_id}/restore",
+    response={
+        200: UserRestoreResponse,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+    },
+    auth=AuthBearer(),
+    summary="Restore deleted user",
+    description="Return soft deleted user"
+)
+def restore_user_endpoint(request, user_id: int):
+    """Restore deleted user"""
+
+    try:
+        if not request.user.is_staff:
+            return 403, {
+                "error": "Permission denied",
+                "code": "permission_denied"
+            }
+            
+        result = UserService.restore_user(
+            user_id=user_id,
+            restored_by_id=request.user.id
+        ) 
+       
+        return 200, {
+            "success": True,
+            "message": result['message'],
+            "user_id": result['user_id'],
+            "username": result['username'],
+            "restored_at": result['restored_at']
+        }
+        
+    except User.DoesNotExist:
+        return 404, {
+            "error": "User not found",
+            "code": "user_not_found"
+        }
+        
+    except ValueError as e:
+        return 400, {
+            "error": str(e),
+            "message": "not_deleted"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error restoring user {user_id}: {e}", exc_info=True)
+        return 500, {
+            "error": "Internal server error",
+            "code": "server_error"
+        }
+        
+@users_router.delete(
+    "/{user_id}/hard",
+    response={
+        200: SuccessResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+    },
+    auth=AuthBearer(),
+    summary="Delete user permanently",
+    description=""
+)
+def hard_delete_user_endpoint(request, user_id: int):
+    
+    try:
+        if not request.user.is_superuser:
+            return 403, {
+                "error": "Permission denied",
+                "code": "permission_denied",
+                "message": "Only super admin can hard delete users"
+            }
+            
+        result = UserService.hard_delete_user(
+            user_id=user_id,
+            deleted_by_id=request.user.id
+        )
+        
+        return 200, {
+            "success": True,
+            "message": result['message']
+        }
+        
+    except User.DoesNotExist:
+        return 404, {
+            "error": "User not found",
+            "code": "user_not_found"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error hard deleting user {user_id}: {e}", exc_info=True)
+        return 500, {
+            "error": "Internal server error",
+            "code": "server_error"
+        }
+        
+@users_router.post(
+    "/delete-multiple",
+    response={
+        200: SuccessResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+    },
+    auth=AuthBearer(),
+    summary="Delete multiple users",
+    description=""
+)
+def delete_multiple_users_endpoint(request, payload: DeleteMultipleRequest):
+    
+    try:
+        if not request.user.is_staff:
+            return 403, {
+                "error": "Permission denied",
+                "message": "permission_denied"
+            }
+            
+        if request.user.id in payload.user_ids:
+            return 400, {
+                "error": "Cannot delete yourself",
+                "code": "self_delete",
+                "message": "You cannot delete your own account"
+            }
+            
+        result = UserService.delete_multiple_users(
+            user_ids=payload.user_ids,
+            deleted_by_id=request.user.id
+        )
+        
+        return 200, {
+            "success": True,
+            "message": result['message'],
+            "data": result['results']
+        }
+        
+    except Exception as e:
+        logger.error(f"Error deleting multiple users: {e}", exc_info=True)
+        return 500, {
+            "error": "Internal server error",
+            "code": "server_error"
+        }
+        
+@users_router.get(
+    "/deleted",
+    response={
+        200: List[UserDetailSchema],
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema
+    },
+    auth=AuthBearer(),
+    summary="List deleted users",
+    description=""
+)
+def get_deleted_users_endpoint(request):
+    
+    try:
+        if not request.user.is_staff:
+            return 403, {
+                "error": "Permission denied",
+                "code": "permission_denied"
+            }
+            
+        deleted_users = UserService.get_deleted_users()
+        
+        return 200, [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "is_active": user.is_active,
+                "is_deleted": user.is_deleted,
+                "deleted_at": user.deleted_at,
+                "date_joined": user.date_joined,
+            }
+            for user in deleted_users
+        ]
+        
+    except Exception as e:
+        logger.error(f"Error fetching deleted users: {e}", exc_info=True)
+        return 500, {
+            "error": "Internal server error",
+            "code": "server_error"
+        }
+        
+@users_router.get(
+    "/{user_id}/detail",
+    response={
+        200: UserDetailSchema,
+        401: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+    },
+    auth=AuthBearer(),
+    summary="Get user detail including deleted status",
+    description=""
+)
+def get_user_detail_endpoint(request, user_id: int):
+    
+    try:
+        user = UserService.get_user_detail(user_id)
+        
+        if not user:
+            return 404, {
+                "error": "User not found",
+                "code": "user_not_found"
+            }
+            
+        if not request.user.is_staff and request.user.id != user_id:
+            return 403, {
+                "error": "Permission denied",
+                "code": "permission_denied"
+            }
+            
+        return 200, {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "is_active": user.is_active,
+            "is_deleted": user.is_deleted,
+            "deleted_at": user.deleted_at,
+            "date_joined": user.date_joined,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting user detail {user_id}: {e}", exc_info=True)
+        return 500, {
+            "error": "Internal error server",
+            "code": "server_error"
+        }

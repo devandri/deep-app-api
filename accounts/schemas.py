@@ -3,6 +3,17 @@ from ninja import Schema
 from typing import Optional
 from datetime import datetime
 
+# ============ REQUEST SCHEMAS ============
+
+class DeleteUserRequest(Schema):
+    pass
+
+class RestoreUserRequest(Schema):
+    pass
+
+class DeleteMultipleRequest(Schema):
+    user_ids: list[int]
+
 # ============ USER SCHEMAS ============
 
 class UserCreateSchema(Schema):
@@ -52,7 +63,7 @@ class TokenResponseSchema(Schema):
     refresh: str
     user: Optional[dict] = None
 
-# ============ ERROR SCHEMAS ============
+# ============ RESPONSE SCHEMAS ============
 
 class ErrorResponseSchema(Schema):
     error: str
@@ -61,3 +72,28 @@ class ErrorResponseSchema(Schema):
 class SuccessResponseSchema(Schema):
     success: bool
     message: str
+    
+class UserSoftDeleteResponse(Schema):
+    success: bool
+    message: str
+    user_id: int
+    username: str
+    deleted_at: Optional[datetime] = None
+    
+class UserRestoreResponse(Schema):
+    success: bool
+    message: str
+    user_id: int
+    username: str
+    restored_at: datetime
+    
+class UserDetailSchema(Schema):
+    id: int
+    username: str
+    email: str
+    first_name: str
+    last_name: str
+    is_active: bool
+    id_deleted: bool
+    deleted_at: Optional[datetime]
+    date_joined: datetime
