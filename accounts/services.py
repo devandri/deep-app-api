@@ -1,5 +1,4 @@
 # accounts/services.py
-from .models import User
 from django.contrib.auth import authenticate, get_user_model
 from django.db.models import Q
 from django.contrib.auth.hashers import make_password

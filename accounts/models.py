@@ -36,6 +36,8 @@ class User(AbstractUser):
     # override default manager
     objects = SoftDeleteManager()
     
+    all_objects = models.Manager()
+    
     # Manager for accessing the entire data
     class Meta:
         db_table = "users"

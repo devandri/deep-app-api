@@ -1,7 +1,6 @@
 # accounts/api.py
 from ninja import Router, Body
 from ninja.security import HttpBearer
-from .models import User
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken, ExpiredTokenError
 from .serializers import UserSerializer
@@ -24,7 +23,7 @@ from .services import (
 )
 
 logger = logging.getLogger(__name__)
-UserAuth = get_user_model()
+User = get_user_model()
 
 
 # ============ ROUTERS ============
