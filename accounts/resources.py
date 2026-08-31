@@ -37,6 +37,8 @@ class UserResource:
         return [cls.make(user) for user in users]
     
 class UserDetailResource(UserResource):
+    
+    @classmethod
     def make(cls, user) -> dict:
         data = super().make(user)
         data.update({

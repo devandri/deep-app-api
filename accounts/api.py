@@ -141,7 +141,7 @@ def logout(request, payload: LogoutSchema = Body(None)):
     
     return {"success": True, "message": "Successfully logged out"}
 
-# TODO: current task
+# TODO: GET me
 @auth_router.get(
     "/me",
     response={200: BaseResponse, 401: ErrorResponseSchema},
@@ -161,26 +161,40 @@ def get_current_user(request):
 # USERS ENDPOINTS (prefix: /api/users/)
 # ========================================
 
+# TODO: GET users
 @users_router.get(
     "/",
-    response={200: list[UserResponseSchema], 401: ErrorResponseSchema},
+    response={200: BaseResponse, 401: ErrorResponseSchema},
     auth=AuthBearer(),
     summary="List all users",
 )
 def list_users(request):
-    return get_users()
+    users = get_users()
+    return BaseResponse.success(
+        data=UserResource.collection(users),
+        message="User retrieved successfully"
+    )
+    
 
+# TODO: GET user_id
 @users_router.get(
     "/{user_id}",
-    response={200: UserResponseSchema, 401: ErrorResponseSchema, 404: ErrorResponseSchema},
+    response={200: BaseResponse, 401: ErrorResponseSchema, 404: BaseResponse},
     auth=AuthBearer(),
     summary="Get user by ID",
 )
 def detail(request, user_id: int):
     try:
-        return get_user(user_id)
+        user = get_user(user_id)
+        return BaseResponse.success(
+            data=UserDetailResource.make(user),
+            message="User detail retrieved successfully"
+        )
     except User.DoesNotExist:
-        return 404, {"error": "User not found"}
+        return 404, BaseResponse.error(
+            message="User not found",
+            code="user_not_found"
+        )
 
 @users_router.post(
     "/",
