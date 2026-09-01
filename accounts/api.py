@@ -303,14 +303,14 @@ def delete_user_endpoint(request, user_id: int):
     Soft delete user
     """
     try:
-        if not request.user.is_staff:
+        if not request.auth.is_staff:
             return 403, {
                 "error": "Permission denied",
                 "code": "permission_denied",
                 "message": "Only admin can delete users"
             }
             
-        if request.user.id == user_id:
+        if request.auth.id == user_id:
             return 400, {
                 "error": "Cannot delete yourself",
                 "code": "self_delete",
@@ -319,7 +319,7 @@ def delete_user_endpoint(request, user_id: int):
             
         result = UserService.soft_delete_user(
             user_id=user_id,
-            deleted_by_id=request.user.id
+            deleted_by_id=request.auth.id
         )
         
         return 200, {
@@ -373,7 +373,7 @@ def restore_user_endpoint(request, user_id: int):
     """Restore deleted user"""
 
     try:
-        if not request.user.is_staff:
+        if not request.auth.is_staff:
             return 403, {
                 "error": "Permission denied",
                 "code": "permission_denied"
@@ -381,7 +381,7 @@ def restore_user_endpoint(request, user_id: int):
             
         result = UserService.restore_user(
             user_id=user_id,
-            restored_by_id=request.user.id
+            restored_by_id=request.auth.id
         ) 
        
         return 200, {
@@ -426,7 +426,7 @@ def restore_user_endpoint(request, user_id: int):
 def hard_delete_user_endpoint(request, user_id: int):
     
     try:
-        if not request.user.is_superuser:
+        if not request.auth.is_superuser:
             return 403, {
                 "error": "Permission denied",
                 "code": "permission_denied",
@@ -435,7 +435,7 @@ def hard_delete_user_endpoint(request, user_id: int):
             
         result = UserService.hard_delete_user(
             user_id=user_id,
-            deleted_by_id=request.user.id
+            deleted_by_id=request.auth.id
         )
         
         return 200, {
@@ -457,7 +457,7 @@ def hard_delete_user_endpoint(request, user_id: int):
         }
         
 @users_router.post(
-    "/delete-multiple",
+    "/delete-multiple/",
     response={
         200: SuccessResponseSchema,
         400: ErrorResponseSchema,
@@ -471,13 +471,13 @@ def hard_delete_user_endpoint(request, user_id: int):
 def delete_multiple_users_endpoint(request, payload: DeleteMultipleRequest):
     
     try:
-        if not request.user.is_staff:
+        if not request.auth.is_staff:
             return 403, {
                 "error": "Permission denied",
                 "message": "permission_denied"
             }
             
-        if request.user.id in payload.user_ids:
+        if request.auth.id in payload.user_ids:
             return 400, {
                 "error": "Cannot delete yourself",
                 "code": "self_delete",
@@ -486,7 +486,7 @@ def delete_multiple_users_endpoint(request, payload: DeleteMultipleRequest):
             
         result = UserService.delete_multiple_users(
             user_ids=payload.user_ids,
-            deleted_by_id=request.user.id
+            deleted_by_id=request.auth.id
         )
         
         return 200, {
@@ -503,9 +503,9 @@ def delete_multiple_users_endpoint(request, payload: DeleteMultipleRequest):
         }
         
 @users_router.get(
-    "/deleted",
+    "/deleted/",
     response={
-        200: List[UserDetailSchema],
+        200: BaseResponse,
         401: ErrorResponseSchema,
         403: ErrorResponseSchema
     },
@@ -516,7 +516,7 @@ def delete_multiple_users_endpoint(request, payload: DeleteMultipleRequest):
 def get_deleted_users_endpoint(request):
     
     try:
-        if not request.user.is_staff:
+        if not request.auth.is_staff:
             return 403, {
                 "error": "Permission denied",
                 "code": "permission_denied"
@@ -524,20 +524,10 @@ def get_deleted_users_endpoint(request):
             
         deleted_users = UserService.get_deleted_users()
         
-        return 200, [
-            {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_active": user.is_active,
-                "is_deleted": user.is_deleted,
-                "deleted_at": user.deleted_at,
-                "date_joined": user.date_joined,
-            }
-            for user in deleted_users
-        ]
+        return 200, BaseResponse.success(
+            data=UserResource.collection(deleted_users),
+            message="Deleted users retreived"
+        )
         
     except Exception as e:
         logger.error(f"Error fetching deleted users: {e}", exc_info=True)
@@ -549,8 +539,9 @@ def get_deleted_users_endpoint(request):
 @users_router.get(
     "/{user_id}/detail",
     response={
-        200: UserDetailSchema,
+        200: BaseResponse,
         401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
         404: ErrorResponseSchema,
     },
     auth=AuthBearer(),
@@ -568,23 +559,16 @@ def get_user_detail_endpoint(request, user_id: int):
                 "code": "user_not_found"
             }
             
-        if not request.user.is_staff and request.user.id != user_id:
+        if not request.auth.is_staff and request.auth.id != user_id:
             return 403, {
                 "error": "Permission denied",
                 "code": "permission_denied"
             }
             
-        return 200, {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "is_active": user.is_active,
-            "is_deleted": user.is_deleted,
-            "deleted_at": user.deleted_at,
-            "date_joined": user.date_joined,
-        }
+        return 200, BaseResponse.success(
+            data=UserResource.make(user),
+            message="Detail user retreived successfully"
+        )
         
     except Exception as e:
         logger.error(f"Error getting user detail {user_id}: {e}", exc_info=True)
