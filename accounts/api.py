@@ -23,6 +23,8 @@ from .services import (
     authenticate_user, generate_tokens, blacklist_token,
 )
 from .resources import UserResource, UserDetailResource
+import csv
+from django.http import HttpResponse
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -590,3 +592,50 @@ def get_user_detail_endpoint(request, user_id: int):
             "error": "Internal error server",
             "code": "server_error"
         }
+        
+@users_router.get(
+    "/export/",
+    response=BaseResponse,
+    auth=AuthBearer(),
+    summary="Export all users (no pagination), json or csv format"
+)
+def export_users(
+    request,
+    filters: UserFilterParams = Query(...),
+    format: str = 'json',
+):
+    """
+    Export all users matching filters (no pagination)
+    Useful for CSV export or data analytics
+    """
+    if not request.auth.is_staff:
+        return BaseResponse.error(
+            message="Permission denied",
+            code="permission_denied"
+        )
+        
+    try:
+        filter_dict = filters.dict(exclude_none=True)
+        data = UserService.get_export_data(filter_dict)
+        
+        if format == 'csv':
+            
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="users.csv"'
+            
+            writer = csv.DictWriter(response, fieldnames=data[0].keys() if data else [])
+            writer.writeheader()
+            writer.writerows(data)
+            return response
+        
+        return BaseResponse.success(
+            data=data,
+            message=f"Exported {len(data)} users"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error exporting users: {e}", exc_info=True)
+        return BaseResponse.error(
+            message="Failed to export users",
+            code="server_error"
+        )
