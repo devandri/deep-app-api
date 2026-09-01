@@ -1,6 +1,6 @@
 # accounts/services.py
 from django.contrib.auth import authenticate, get_user_model
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
@@ -8,9 +8,86 @@ from typing import Optional, List, Dict, Any
 from .schemas import UserCreateSchema, UserUpdateSchema
 import logging
 from django.utils import timezone
+from .resources import UserResource
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+class UserFilterService:
+    """Service for sorting and filtering users"""
+    @staticmethod
+    def apply_filters(queryset: QuerySet, filters: Dict[str, Any]) -> QuerySet:
+        # Text search
+        if filters.get('search'):
+            search = filters['search']
+            queryset = queryset.filter(
+                Q(username__icontains=search) |
+                Q(email__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(first_name__icontains=search)
+            )
+            
+        # Exact matches
+        if filters.get('username'):
+            queryset = queryset.filter(username__icontains=filters['username'])
+            
+        if filters.get('email'):
+            queryset = queryset.filter(email__icontains=filters['email'])
+            
+        if filters.get('first_name'):
+            queryset = queryset.filter(first_name__icontains=filters['first_name'])
+            
+        if filters.get('last_name'):
+            queryset = queryset.filter(last_name__icontains=filters['last_name'])
+            
+        # Boolean filters
+        if filters.get('is_active') is not None:
+            queryset = queryset.filter(is_active=filters['is_active'])
+
+        if filters.get('is_staff') is not None:
+            queryset = queryset.filter(is_staff=filters['is_staff'])
+
+        if filters.get('is_superuser') is not None:
+            queryset = queryset.filter(is_superuser=filters['is_superuser'])
+            
+        # Role filter (custom)
+        if filters.get('role'):
+            role = filters['role']
+            if role == 'user':
+                queryset = queryset.filter(is_staff=False, is_superuser=False)
+            elif role == 'admin':
+                queryset = queryset.filter(is_staff=True, is_superuser=False)
+            elif role == 'superuser':
+                queryset = queryset.filter(is_superuser=True)
+                
+        # Date range filters
+        if filters.get('date_joined_after'):
+            queryset = queryset.filter(date_joined__gte=filters['date_joined_after'])
+
+        if filters.get('date_joined_before'):
+            queryset = queryset.filter(date_joined__lte=filters['date_joined_before'])
+
+        return queryset
+    
+    @staticmethod
+    def apply_sorting(queryset: QuerySet, sort_by: str, sort_order: str) -> QuerySet:
+        valid_fields = {
+            'username': 'username',
+            'email': 'email',
+            'first_name': 'first_name',
+            'last_name': 'last_name',
+            'date_joined': 'date_joined',
+            'last_login': 'last_login',
+            'is_active': 'is_active',
+            'is_staff': 'is_staff',
+            'is_superuser': 'is_superuser',
+        }
+        
+        field = valid_fields.get(sort_by, 'date_joined')
+        if sort_order.lower() == 'asc':
+            return queryset.order_by(field)
+        else:
+            return queryset.order_by(f'-{field}')
 
 class UserService:
     
@@ -172,6 +249,59 @@ class UserService:
             return user.is_deleted
         except User.DoesNotExist:
             return False
+        
+    @staticmethod
+    def get_filtered_users(
+        filters: Dict[str, Any],
+        sort_by: str = 'date_joined',
+        sort_order: str = 'desc',
+        page: int = 1,
+        per_page: int = 10,
+        include_deleted: bool = False
+    ) -> Dict[str, Any]:
+        if include_deleted:
+            queryset = User.all_objects.all()
+        else:
+            queryset = User.objects.all()
+        
+        # Apply filters    
+        queryset = UserFilterService.apply_filters(queryset, filters)
+        
+        # Apply sorting
+        queryset = UserFilterService.apply_sorting(queryset, sort_by, sort_order)
+        
+        total = queryset.count()
+
+        # Apply pagination
+        start = (page - 1) * per_page
+        end = start + per_page
+        users_page = queryset[start:end]
+        
+        # Transform to response
+        items = UserResource.collection(users_page)
+        
+        return {
+            "items": items,
+            "pagination": {
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (total + per_page - 1) // per_page if per_page > 0 else 0,
+                "has_next": page < ((total + per_page - 1) // per_page),
+                "has_previous": page > 1,
+                "from": ((page - 1) * per_page) + 1 if total > 0 else 0,
+                "to": min(page * per_page, total) if total > 0 else 0,
+            }
+        }
+        
+    @staticmethod
+    def get_export_data(filters: Dict[str, Any]) -> List[dict]:
+        """Get all users without pagination for export"""
+        queryset = User.objects.all()
+        queryset = UserFilterService.apply_filters(queryset, filters)
+        queryset = UserFilterService.apply_sorting(queryset, 'date_joined', 'asc')
+
+        return UserResource.collection(queryset)
         
 # Overwrite existing function "delete_user" before soft deleted
 def delete_user(user_id: int) -> None:

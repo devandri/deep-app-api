@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from .schemas import BaseResponse
+import math
 
 class UserResource:
     @staticmethod
@@ -48,3 +49,50 @@ class UserDetailResource(UserResource):
             "deleted_at": cls.format_datetime(getattr(user, 'deleted_at', None))
         })
         return data
+    
+class PaginatedResource:
+    @classmethod
+    def make(
+        cls,
+        items: List[dict],
+        total: int,
+        page: int,
+        per_page: int
+    ) -> dict:
+        total_pages = math.ceil(total/per_page) if per_page > 0 else 0
+        
+        return {
+            "items": items,
+            "pagination": {
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_previous": page > 1,
+                "from": ((page - 1) * per_page) + 1 if total > 0 else 0,
+                "to": min(page * per_page, total) if total > 0 else 0
+            }
+        }
+        
+class UserListResource:
+    """Specific resource to serving user list with filtering & sorting"""
+    @classmethod
+    def get_paginated_response(
+        cls,
+        users,
+        page: int,
+        per_page: int
+    ) -> dict:
+        total = users.count()
+        start = (page - 1) * per_page
+        end = start + per_page
+        users_page = users[start:end]
+        items = UserResource.collection(users_page)
+        
+        return PaginatedResource.make(
+            items=items,
+            total=total,
+            page=page,
+            per_page=per_page
+        )

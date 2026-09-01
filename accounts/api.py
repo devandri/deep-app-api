@@ -1,5 +1,5 @@
 # accounts/api.py
-from ninja import Router, Body
+from ninja import Router, Body, Query
 from ninja.security import HttpBearer
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken, ExpiredTokenError
@@ -15,7 +15,8 @@ from .schemas import (
     LoginSchema, RegisterSchema, RefreshTokenSchema, LogoutSchema,
     TokenResponseSchema, ErrorResponseSchema, SuccessResponseSchema,
     UserSoftDeleteResponse, UserRestoreResponse, DeleteMultipleRequest,
-    UserDetailSchema, BaseResponse
+    UserDetailSchema, BaseResponse,
+    PaginationParams, UserFilterParams, SortParams
 )
 from .services import (
     get_users, get_user, create_user, update_user, delete_user,
@@ -164,16 +165,53 @@ def get_current_user(request):
 # TODO: GET users
 @users_router.get(
     "/",
-    response={200: BaseResponse, 401: ErrorResponseSchema},
+    response=BaseResponse,
     auth=AuthBearer(),
     summary="List all users",
 )
-def list_users(request):
-    users = get_users()
-    return BaseResponse.success(
-        data=UserResource.collection(users),
-        message="User retrieved successfully"
-    )
+def list_users(
+    request,
+    pagination: PaginationParams = Query(...),
+    filters: UserFilterParams = Query(...),
+    sort: SortParams = Query(...)
+):
+    # users = get_users()
+    # return BaseResponse.success(
+    #     data=UserResource.collection(users),
+    #     message="User retrieved successfully"
+    # )
+    
+    if not request.auth.is_staff:
+        return BaseResponse.error(
+            message="Permission denied",
+            code="permission_denied"
+        )
+        
+    try:
+        filter_dict = filters.dict(exclude_none=True)
+        sort_dict = sort.dict()
+        pagination_dict = pagination.dict()
+        
+        result = UserService.get_filtered_users(
+            filters=filter_dict,
+            sort_by=sort_dict.get('sort_by', 'date_joined'),
+            sort_order=sort_dict.get('sort_order', 'desc'),
+            page=pagination_dict.get('page', 1),
+            per_page=pagination_dict.get('per_page', 10),
+            include_deleted=False
+        )
+        
+        return BaseResponse.success(
+            data=result,
+            message=f"Users retrieved successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error listing users: {e}", exc_info=True)
+        return BaseResponse.error(
+            message="Failed to retrieve users",
+            code="server_error"
+        )
     
 
 # TODO: GET user_id

@@ -2,6 +2,7 @@
 from ninja import Schema
 from typing import Optional, TypeVar, Generic, Any
 from datetime import datetime
+from pydantic import Field
 
 T = TypeVar('T')
 
@@ -123,3 +124,46 @@ class UserDetailSchema(Schema):
     id_deleted: bool
     deleted_at: Optional[datetime]
     date_joined: datetime
+    
+# Pagination Schemas
+class PaginationParams(Schema):
+    page: int = Field(1, ge=1, description="Page number (starts from 1)")
+    per_page: int = Field(10, ge=1, le=100, description="Items per page (max 100)")
+
+class PaginatedResponse(Schema):
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
+    
+# Filter Schemas
+class UserFilterParams(Schema):
+    username: Optional[str] = Field(None, description="Filter by username (contains)")
+    email: Optional[str] = Field(None, description="")
+    first_name: Optional[str] = Field(None, description="")
+    last_name: Optional[str] = Field(None, description="")
+    is_active: Optional[bool] = Field(None, description="")
+    is_staff: Optional[bool] = Field(None, description="")
+    is_superuser: Optional[bool] = Field(None, description="")
+    role: Optional[str] = Field(None, description="")
+    date_joined_after: Optional[datetime] = Field(None, description="")
+    date_joined_before: Optional[datetime] = Field(None, description="")
+    search: Optional[str] = Field(None, description="Search in username, email, first_name and last_name")
+
+# Sorting Schemas
+class SortParams(Schema):
+    sort_by: Optional[str] = Field(
+        'date_joined',
+        description="Sort field: username, email, first_name, last_name, date_joined, last_login"
+    )
+    sort_order: Optional[str] = Field(
+        'desc',
+        description="",
+        pattern="^(asc|desc)$"
+    )
+    
+# Combined request params
+class UserListRequest(PaginationParams, UserFilterParams, SortParams):
+    pass
