@@ -302,6 +302,16 @@ class UserService:
         queryset = UserFilterService.apply_sorting(queryset, 'date_joined', 'asc')
 
         return UserResource.collection(queryset)
+    
+    @staticmethod
+    def register_user(payload):
+        return User.objects.create_user(
+            username=payload.username,
+            email=payload.email,
+            password=payload.password,
+            first_name=payload.first_name or "",
+            last_name=payload.last_name or "",
+        )
         
 # Overwrite existing function "delete_user" before soft deleted
 def delete_user(user_id: int) -> None:
@@ -352,19 +362,28 @@ def authenticate_user(username_or_email: str, password: str) -> Optional[User]:
     except Exception:
         return None
 
-def generate_tokens(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {
-        "access": str(refresh.access_token),
-        "refresh": str(refresh),
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-        }
-    }
+# def generate_tokens(user: User) -> dict:
+#     refresh = RefreshToken.for_user(user)
+#     return {
+#         "access": str(refresh.access_token),
+#         "refresh": str(refresh),
+#         "user": {
+#             "id": user.id,
+#             "username": user.username,
+#             "email": user.email,
+#             "first_name": user.first_name,
+#             "last_name": user.last_name,
+#         }
+#     }
+
+def generate_tokens(user: User = None, refresh: str = None) -> dict:
+    if (refresh):
+        refresh = RefreshToken(refresh)
+    else:
+        refresh = RefreshToken.for_user(user)
+        
+    # refresh = RefreshToken.for_user(user)
+    return str(refresh.access_token), str(refresh)
 
 def blacklist_token(refresh_token: str) -> bool:
     try:

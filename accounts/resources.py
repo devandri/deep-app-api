@@ -96,3 +96,24 @@ class UserListResource:
             page=page,
             per_page=per_page
         )
+        
+class AuthResponseResource:
+    @classmethod
+    def make(cls, user, access_token: str, refresh_token: str) -> dict:
+        return {
+            "user": UserResource.make(user),
+            "tokens": {
+                "access": access_token,
+                "refresh": refresh_token,
+                "expires_in": 3600, # see JWT setting
+                "token_type": "Bearer"
+            }
+        }
+        
+    @classmethod
+    def refresh(cls, access_token: str) -> dict:
+        return {
+            "access": access_token,
+            "expires_in": 3600,
+            "token_type": "Bearer"
+        }

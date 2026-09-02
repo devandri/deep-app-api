@@ -22,11 +22,12 @@ class BaseResponse(Schema, Generic[T]):
         }
         
     @staticmethod
-    def error(message: str = "Error", code: str = None) -> dict:
+    def error(message: str = "Error", code: str = None, data: Any = None) -> dict:
         return {
             "status": "error",
             "message": message,
             "code": code,
+            "data": data,
             "timestamp": datetime.utcnow().isoformat() + "Z"
         }
 
