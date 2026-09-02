@@ -644,35 +644,58 @@ def delete_multiple_users_endpoint(request, payload: DeleteMultipleRequest):
     "/deleted/",
     response={
         200: BaseResponse,
-        401: ErrorResponseSchema,
-        403: ErrorResponseSchema
+        401: BaseResponse,
+        403: BaseResponse
     },
     auth=AuthBearer(),
     summary="List deleted users",
     description=""
 )
-def get_deleted_users_endpoint(request):
+def get_deleted_users_endpoint(
+    request,
+    pagination: PaginationParams = Query(...),
+    filters: UserFilterParams = Query(...),
+    sort: SortParams = Query(...),
+):
     
     try:
         if not request.auth.is_staff:
-            return 403, {
-                "error": "Permission denied",
-                "code": "permission_denied"
-            }
+            return 403, BaseResponse.error(
+                message="Permission denied",
+                code="permission_denied"
+            )
             
-        deleted_users = UserService.get_deleted_users()
+        filter_dict = filters.dict(exclude_none=True)
+        sort_dict = sort.dict()
+        pagination_dict = pagination.dict()
+
+        result = UserService.get_filtered_users(
+            filters=filter_dict,
+            sort_by=sort_dict.get('sort_by', 'deleted_at'),
+            sort_order=sort_dict.get('sort_order', 'desc'),
+            page=pagination_dict.get('page', 1),
+            per_page=pagination_dict.get('per_page', 10),
+            only_deleted=True
+        )
         
         return 200, BaseResponse.success(
-            data=UserResource.collection(deleted_users),
-            message="Deleted users retreived"
+            data=result,
+            message="Deleted users retrieved"
         )
+            
+        # deleted_users = UserService.get_deleted_users()
+        
+        # return 200, BaseResponse.success(
+        #     data=UserResource.collection(deleted_users),
+        #     message="Deleted users retreived"
+        # )
         
     except Exception as e:
         logger.error(f"Error fetching deleted users: {e}", exc_info=True)
-        return 500, {
-            "error": "Internal server error",
-            "code": "server_error"
-        }
+        return 401, BaseResponse.error(
+            message="Failed to retrieve deleted users",
+            code="server_error"
+        )
         
 @users_router.get(
     "/{user_id}/detail",

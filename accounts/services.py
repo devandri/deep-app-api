@@ -257,9 +257,12 @@ class UserService:
         sort_order: str = 'desc',
         page: int = 1,
         per_page: int = 10,
-        include_deleted: bool = False
+        include_deleted: bool = False,
+        only_deleted: bool = False
     ) -> Dict[str, Any]:
-        if include_deleted:
+        if only_deleted:
+            queryset = User.all_objects.filter(deleted_at__isnull=False)
+        elif include_deleted:
             queryset = User.all_objects.all()
         else:
             queryset = User.objects.all()
