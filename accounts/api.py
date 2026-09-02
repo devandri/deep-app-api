@@ -38,17 +38,17 @@ users_router = Router(tags=["Users"])
 
 # ============ AUTHENTICATION CLASS ============
 
-class _old_AuthBearer(HttpBearer):
-    def authenticate(self, request, token: str):
-        try:
-            access_token = AccessToken(token)
-            user_id = access_token.payload.get('user_id')
-            user = User.objects.get(id=user_id)
-            return user
-        except ExpiredTokenError:
-            return None
-        except (InvalidToken, User.DoesNotExist):
-            return None
+# class _old_AuthBearer(HttpBearer):
+#     def authenticate(self, request, token: str):
+#         try:
+#             access_token = AccessToken(token)
+#             user_id = access_token.payload.get('user_id')
+#             user = User.objects.get(id=user_id)
+#             return user
+#         except ExpiredTokenError:
+#             return None
+#         except (InvalidToken, User.DoesNotExist):
+#             return None
 
 # ========================================
 # AUTH ENDPOINTS (prefix: /api/auth/)

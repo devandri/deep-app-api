@@ -17,7 +17,8 @@ Including another URLconf
 # config/urls.py
 from django.contrib import admin
 from django.urls import path
-from ninja import NinjaAPI
+from ninja import NinjaAPI, Swagger
+from ninja.openapi.docs import Redoc
 from accounts.api import auth_router, users_router
 
 # ============ NINJA API SETUP ============
@@ -25,6 +26,14 @@ from accounts.api import auth_router, users_router
 api = NinjaAPI(
     title="DeepApp API",
     version="1.0.0",
+    docs=Swagger(
+        settings={
+            "filter": True,
+            "docExpansion": "list",
+            "persisAuthorization": True,
+        },
+    ),
+    # docs=Redoc(),
     description="""
     # DeepApp API Documentation
     
