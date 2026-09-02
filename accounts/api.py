@@ -199,7 +199,7 @@ def refresh_token(request, payload: RefreshTokenSchema):
     try:
         access_token, refresh_token = generate_tokens(None, payload.refresh)
         return BaseResponse.success(
-            data=AuthResponseResource.refresh(access_token),
+            data=AuthResponseResource.refresh(access_token, refresh_token),
             message="Token refreshed successfully"
         )
         

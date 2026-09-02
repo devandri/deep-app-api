@@ -111,9 +111,10 @@ class AuthResponseResource:
         }
         
     @classmethod
-    def refresh(cls, access_token: str) -> dict:
+    def refresh(cls, access_token: str, refresh_token: str) -> dict:
         return {
             "access": access_token,
+            "refresh": refresh_token,
             "expires_in": 3600,
             "token_type": "Bearer"
         }
