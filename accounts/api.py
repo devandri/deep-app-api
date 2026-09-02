@@ -376,37 +376,70 @@ def detail(request, user_id: int):
 
 @users_router.post(
     "/",
-    response={201: UserResponseSchema, 400: ErrorResponseSchema, 401: ErrorResponseSchema},
+    response={201: BaseResponse, 400: BaseResponse, 401: BaseResponse},
     auth=AuthBearer(),
     summary="Create new user",
 )
 def create(request, payload: UserCreateSchema):
     try:
         if User.objects.filter(username=payload.username).exists():
-            return 400, {"error": "Username already exists"}
+            return 400, BaseResponse.error(
+                message="Username already exists",
+                code="username_exist"
+            )
         if User.objects.filter(email=payload.email).exists():
-            return 400, {"error": "Email already exists"}
+            return 400, BaseResponse.error(
+                message="Email already exists",
+                code="email_exist"
+            )
         user = create_user(payload)
-        return 201, user
+        return 201, BaseResponse.success(
+            data=UserResource.make(user),
+            message="User created successfully"
+        )
     except Exception as e:
-        return 400, {"error": str(e)}
+        return 400, BaseResponse.error(
+            message=str(e)
+        )
 
 @users_router.put(
     "/{user_id}",
-    response={200: UserResponseSchema, 400: ErrorResponseSchema, 401: ErrorResponseSchema, 404: ErrorResponseSchema},
+    response={200: BaseResponse, 400: BaseResponse, 401: BaseResponse, 404: BaseResponse},
     auth=AuthBearer(),
     summary="Update user",
 )
 def update(request, user_id: int, payload: UserUpdateSchema):
     try:
+        
+        exist_user = User.objects.filter(id=user_id)
+        if not exist_user:
+            return 404, BaseResponse.error(
+                message="User not found",
+                code="user_not_found"
+            )
+            
         if User.objects.filter(username=payload.username).exclude(id=user_id).exists():
-            return 400, {"error": "Username already exists"}
+            return 400, BaseResponse.error(
+                message="Username already exists",
+                code="username_exist"
+            )
+        
         if User.objects.filter(email=payload.email).exclude(id=user_id).exists():
-            return 400, {"error": "Email already exists"}
+            return 400, BaseResponse.error(
+                message="Email already exists",
+                code="email_exist"
+            )
+        
         user = update_user(user_id, payload)
-        return user
-    except User.DoesNotExist:
-        return 404, {"error": "User not found"}
+        return 200, BaseResponse.success(
+            message="User updated successfully",
+            data=UserResource.make(user)
+        )
+        
+    except Exception as e:
+        return 400, BaseResponse.error(
+            message=str(e)
+        )
 
 @users_router.delete(
     "/{user_id}/old",

@@ -8,6 +8,7 @@ T = TypeVar('T')
 
 class BaseResponse(Schema, Generic[T]):
     status: str = "success"
+    code: str = None
     message: str = ""
     data: Optional[T] = None
     timestamp: str = None
