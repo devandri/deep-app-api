@@ -16,7 +16,7 @@ from .schemas import (
     LoginSchema, RegisterSchema, RefreshTokenSchema, LogoutSchema,
     TokenResponseSchema, ErrorResponseSchema, SuccessResponseSchema,
     UserSoftDeleteResponse, UserRestoreResponse, DeleteMultipleRequest,
-    UserDetailSchema, BaseResponse,
+    UserDetailSchema, BaseResponse, ChangePasswordSchema,
     PaginationParams, UserFilterParams, SortParams
 )
 from .services import (
@@ -240,17 +240,62 @@ def logout(request, payload: LogoutSchema = Body(None)):
 # TODO: GET me
 @auth_router.get(
     "/me",
-    response={200: BaseResponse, 401: ErrorResponseSchema},
+    response={200: BaseResponse, 401: BaseResponse},
     auth=AuthBearer(),
     summary="Get current user profile",
 )
 def get_current_user(request):
     """Mendapatkan data user yang sedang login"""
     user = request.auth
-    return BaseResponse.success(
+    return 200, BaseResponse.success(
         data=UserResource.make(user),
         message="Profile retrieved successfully"
     )
+    
+@auth_router.post(
+    "/change-password",
+    response={
+        200: BaseResponse,
+        400: BaseResponse,
+        401: BaseResponse,
+    },
+    auth=AuthBearer(),
+    summary="Change password"
+)
+def change_password(request, payload: ChangePasswordSchema):
+    user = request.auth
+    
+    if not user.check_password(payload.old_password):
+        return 400, BaseResponse.error(
+            message="Current password is incorrect",
+            code="invalid_password"
+        )
+        
+    if payload.old_password == payload.new_password:
+        return 400, BaseResponse.error(
+            message="New password cannot be the same with old password",
+            code="password_cannot_be_the_same"
+        )
+        
+    # if payload.new_password != payload.confirm_new_password:
+    #     return 400, BaseResponse.error(
+    #         message="Password do not match",
+    #         code="password_mismatch"
+    #     )
+        
+    try:
+        user.set_password(payload.new_password)
+        user.save()
+
+        return 200, BaseResponse.success(
+            message="Password changed successfully"
+        )
+        
+    except:
+        return 401, BaseResponse.error(
+            message="Failed to change password",
+            code="password_change_failed"
+        )
 
 
 # ========================================

@@ -2,7 +2,7 @@
 from ninja import Schema
 from typing import Optional, TypeVar, Generic, Any
 from datetime import datetime
-from pydantic import Field
+from pydantic import Field, BaseModel, field_validator
 
 T = TypeVar('T')
 
@@ -168,3 +168,16 @@ class SortParams(Schema):
 # Combined request params
 class UserListRequest(PaginationParams, UserFilterParams, SortParams):
     pass
+
+class ChangePasswordSchema(BaseModel):
+    old_password: str = Field(..., description="The user's current password for verification")
+    new_password: str = Field(..., min_length=8, description="The new secure password")
+    confirm_new_password: str = Field(..., min_length=8, description="Repeat the new secure password")
+
+    # this error format not match with standard error schema (BaseResponse)
+    @field_validator("confirm_new_password")
+    @classmethod
+    def passwords_match(cls, v: str, info):
+        if 'new_password' in info.data and v != info.data['new_password']:
+            raise ValueError('The two new password fields do not match')
+        return v
