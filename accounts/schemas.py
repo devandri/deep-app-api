@@ -3,8 +3,12 @@ from ninja import Schema
 from typing import Optional, TypeVar, Generic, Any
 from datetime import datetime
 from pydantic import Field, BaseModel, field_validator
+import re
 
 T = TypeVar('T')
+PASSWORD_REGEX = re.compile(
+    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+)
 
 class BaseResponse(Schema, Generic[T]):
     status: str = "success"
@@ -74,9 +78,9 @@ class LoginSchema(Schema):
     password: str
 
 class RegisterSchema(Schema):
-    username: str
+    username: str = Field(min_length=2)
     email: str
-    password: str
+    password: str = Field(min_length=8, pattern=PASSWORD_REGEX)
     confirm_password: str
     first_name: Optional[str] = ""
     last_name: Optional[str] = ""
@@ -94,9 +98,15 @@ class TokenResponseSchema(Schema):
 
 # ============ RESPONSE SCHEMAS ============
 
+# TODO: Choose the one ErrorResponseSchema or ErrorResponse
 class ErrorResponseSchema(Schema):
     error: str
     detail: Optional[str] = None
+    
+class ErrorResponse(Schema):
+    success: bool = False
+    message: str
+    errors: dict[str, list[str]] | None = None
 
 class SuccessResponseSchema(Schema):
     success: bool

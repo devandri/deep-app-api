@@ -20,6 +20,8 @@ from django.urls import path
 from ninja import NinjaAPI, Swagger
 from ninja.openapi.docs import Redoc
 from accounts.api import auth_router, users_router
+from ninja.errors import ValidationError
+from accounts.utils import get_field_name
 
 # ============ NINJA API SETUP ============
 
@@ -52,6 +54,27 @@ api = NinjaAPI(
     docs_url="/docs",          # Swagger UI
     openapi_url="/openapi.json", # OpenAPI Schema
 )
+
+@api.exception_handler(ValidationError)
+def validation_error_handler(request, exc):
+    errors = {}
+
+    for error in exc.errors:
+        field = get_field_name(error["loc"])
+        
+        errors.setdefault(field, []).append(
+            error["msg"]
+        )
+        
+    return api.create_response(
+        request,
+        {
+            "success": False,
+            "message": "Validation failed.",
+            "errors": errors,
+        },
+        status=422,
+    )
 
 # Register routers
 api.add_router("/auth/", auth_router)   # /api/auth/*
