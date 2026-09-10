@@ -78,7 +78,7 @@ class LoginSchema(Schema):
     password: str
 
 class RegisterSchema(Schema):
-    username: str = Field(min_length=2)
+    username: str = Field(min_length=3)
     email: str
     password: str = Field(min_length=8, pattern=PASSWORD_REGEX)
     confirm_password: str
