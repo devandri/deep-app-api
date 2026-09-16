@@ -305,7 +305,11 @@ def change_password(request, payload: ChangePasswordSchema):
 # TODO: GET users
 @users_router.get(
     "/",
-    response=BaseResponse,
+    response={
+    200: BaseResponse,    
+    401: BaseResponse,    
+    500: BaseResponse,    
+    },
     auth=AuthBearer(),
     summary="List all users",
 )
@@ -322,7 +326,7 @@ def list_users(
     # )
     
     if not request.auth.is_staff:
-        return BaseResponse.error(
+        return 401, BaseResponse.error(
             message="Permission denied",
             code="permission_denied"
         )
@@ -341,14 +345,14 @@ def list_users(
             include_deleted=False
         )
         
-        return BaseResponse.success(
+        return 200, BaseResponse.success(
             data=result,
             message=f"Users retrieved successfully"
         )
         
     except Exception as e:
         logger.error(f"Error listing users: {e}", exc_info=True)
-        return BaseResponse.error(
+        return 500, BaseResponse.error(
             message="Failed to retrieve users",
             code="server_error"
         )
