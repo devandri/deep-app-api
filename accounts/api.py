@@ -404,7 +404,7 @@ def create(request, payload: UserCreateSchema):
 
 @users_router.put(
     "/{user_id}",
-    response={200: BaseResponse, 400: BaseResponse, 401: BaseResponse, 404: BaseResponse},
+    response={200: BaseResponse, 422: BaseResponse, 401: BaseResponse, 404: BaseResponse},
     auth=AuthBearer(),
     summary="Update user",
 )
@@ -419,13 +419,13 @@ def update(request, user_id: int, payload: UserUpdateSchema):
             )
             
         if User.objects.filter(username=payload.username).exclude(id=user_id).exists():
-            return 400, BaseResponse.error(
+            return 422, BaseResponse.error(
                 message="Username already exists",
                 code="username_exist"
             )
         
         if User.objects.filter(email=payload.email).exclude(id=user_id).exists():
-            return 400, BaseResponse.error(
+            return 422, BaseResponse.error(
                 message="Email already exists",
                 code="email_exist"
             )
@@ -437,7 +437,7 @@ def update(request, user_id: int, payload: UserUpdateSchema):
         )
         
     except Exception as e:
-        return 400, BaseResponse.error(
+        return 422, BaseResponse.error(
             message=str(e)
         )
 
