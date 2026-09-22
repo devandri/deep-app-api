@@ -56,6 +56,19 @@ class NotificationConsumerV2(AsyncJsonWebsocketConsumer):
         if getattr(self, "user_group", None):
             await self.channel_layer.group_discard(self.user_group, self.channel_name)
         await self.channel_layer.group_discard("broadcast", self.channel_name)
+        
+    async def room_event(self, event):
+        """Generic dispatcher for room broadcasts (chat, typing, etc.)"""
+        logger.debug(
+            "WS -> room_event | user_id=%s | event=%s | room=%s",
+            getattr(self.user, "id", None),
+            event.get("event"),
+            (event.get("data") or {}).get("room")
+        )
+        await self.send_json({
+            "event": event["event"],
+            "data": event["data"]
+        })
             
     async def receive(self, text_data):
         user_id = getattr(self.user, "id", None)
@@ -107,6 +120,7 @@ class NotificationConsumerV2(AsyncJsonWebsocketConsumer):
         elif event == "chat_message":
             room = data.get("room")
             message = (data.get("message") or "").strip()
+            client_id = data.get("clientId")
             if not room or not message:
                 return
             # length guard
@@ -121,6 +135,7 @@ class NotificationConsumerV2(AsyncJsonWebsocketConsumer):
                     "userId": self.user.id,
                     "username": getattr(self.user, "username", f"user_{self.user.id}"),
                     "message": message,
+                    "clientId": client_id,
                     "ts": int(__import__("time").time() * 1000),
                 },
             })
