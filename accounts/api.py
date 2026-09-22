@@ -308,6 +308,7 @@ def change_password(request, payload: ChangePasswordSchema):
     response={
     200: BaseResponse,    
     401: BaseResponse,    
+    403: BaseResponse,
     500: BaseResponse,    
     },
     auth=AuthBearer(),
@@ -326,7 +327,7 @@ def list_users(
     # )
     
     if not request.auth.is_staff:
-        return 401, BaseResponse.error(
+        return 403, BaseResponse.error(
             message="Permission denied",
             code="permission_denied"
         )
@@ -777,7 +778,11 @@ def get_user_detail_endpoint(request, user_id: int):
         
 @users_router.get(
     "/export/",
-    response=BaseResponse,
+    response={
+        200: BaseResponse,
+        403: BaseResponse,
+        500: BaseResponse,
+    },
     auth=AuthBearer(),
     summary="Export all users (no pagination), json or csv format"
 )
@@ -791,7 +796,7 @@ def export_users(
     Useful for CSV export or data analytics
     """
     if not request.auth.is_staff:
-        return BaseResponse.error(
+        return 403, BaseResponse.error(
             message="Permission denied",
             code="permission_denied"
         )
@@ -810,14 +815,14 @@ def export_users(
             writer.writerows(data)
             return response
         
-        return BaseResponse.success(
+        return 200, BaseResponse.success(
             data=data,
             message=f"Exported {len(data)} users"
         )
         
     except Exception as e:
         logger.error(f"Error exporting users: {e}", exc_info=True)
-        return BaseResponse.error(
+        return 500, BaseResponse.error(
             message="Failed to export users",
             code="server_error"
         )
