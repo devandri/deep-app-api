@@ -102,3 +102,6 @@ logs/
 *.tmp
 *.swp
 *.swo
+
+dumb.rdb
+*.rdb

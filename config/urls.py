@@ -16,7 +16,7 @@ Including another URLconf
 """
 # config/urls.py
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from ninja import NinjaAPI, Swagger
 from ninja.openapi.docs import Redoc
 from accounts.api import auth_router, users_router
@@ -82,5 +82,6 @@ api.add_router("/users/", users_router) # /api/users/*
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/notifications/', include("notifications.urls")),
     path('api/', api.urls),  # Base API: /api/
 ]
