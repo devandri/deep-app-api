@@ -42,6 +42,32 @@ class NotificationConsumerV2(AsyncJsonWebsocketConsumer):
             "data": { "userId": self.user.id }
         })
         
+        # send last 20 unread notifications
+        unread = await self.get_unread_notifications()
+        for n in unread:
+            await self.send_json({"event": "notification", "data": n})
+        
+    @database_sync_to_async
+    def get_unread_notifications(self):
+        from notifications.models import Notification
+        qs = Notification.objects.filter(user=self.user, is_read=False).order_by("-created_at")[:20]
+        return [
+            {
+                "id": n.id,
+                "title": n.title,
+                "body": n.body,
+                "type": n.type,
+                "data": n.data,
+                "createdAt": n.created_at.isoformat(),
+            }
+            for n in qs
+        ]
+        
+    @database_sync_to_async
+    def mark_read(self, nid):
+        from notifications.models import Notification
+        Notification.objects.filter(id=nid, user=self.user).update(is_read=True)
+        
     async def disconnect(self, close_code):
         # if hasattr(self, "user_group"):
         #     await self.channel_layer.group_discard(self.user_group, self.channel_name)
@@ -140,12 +166,18 @@ class NotificationConsumerV2(AsyncJsonWebsocketConsumer):
                 },
             })
             
+        elif event == "mark_read":
+            nid = data.get("id")
+            if nid:
+                await self.mark_read(nid)
+            
         else:
             logger.warning("WS UNKNOWN event | user_id=%s | event=%r", user_id, event)
             
     # group message handlers
     async def notify(self, event):
         """Fired when someone does group_send(type='notify', ...)"""
+        logger.info("notify() fired for user=%s | payload=%s", getattr(self.user, "id", None), event["payload"])
         await self.send_json({
             "event": "notification",
             "data": event["payload"],
@@ -159,7 +191,7 @@ class NotificationConsumerV2(AsyncJsonWebsocketConsumer):
         
     # Helpers
     async def send_json(self, obj):
-        await self.send(text_data=json.dumps(obj))
+        await self.send(text_data=json.dumps(obj, default=str))
         
     @database_sync_to_async
     def get_user_from_token(self, token):

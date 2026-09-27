@@ -1,8 +1,10 @@
 import logging
+import json
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from notifications.utils import send_notification_to_user
+from django.forms.models import model_to_dict
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -35,6 +37,19 @@ def on_user_updated(sender, instance, created, **kwargs):
             title="Profile updated",
             body="Your profile was updated successfully.",
             type_="info",
+            extra=json.dumps(model_to_dict(instance), default=str)
+            # extra=compute_changes(instance)
         )
     except Exception:
         logger.exception("Update notification failed for user %s", instance.id)
+        
+def compute_changes(instance):
+    old = getattr(instance, "_pre_save_instance", None)
+    if old is None:
+        return {}
+    fields = [f.name for f in instance._meta.fields]
+    return {
+        f: [getattr(old, f), getattr(instance, f)]
+        for f in fields
+        if getattr(old, f) != getattr(instance, f)
+    }

@@ -82,6 +82,7 @@ api.add_router("/users/", users_router) # /api/users/*
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # path('api/notifications/', include("notifications.urls")),
     path('api/notifications/', include("notifications.urls")),
     path('api/', api.urls),  # Base API: /api/
 ]

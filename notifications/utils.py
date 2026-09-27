@@ -9,16 +9,32 @@ def send_notification_to_user(user_id, title, body, type_="info", extra=None):
     Push a notification to a single connected user.
     Safe to call from sync code (views, signals, celery tasks).
     """
+    
+    from .models import Notification
+    
+    # 1) Persist - so the user gets it even if offline
+    n = Notification.objects.create(
+        user_id=user_id,
+        title=title,
+        body=body,
+        type=type_,
+        data=extra or {}
+    )
+    
+    # 2) Push live (no-op if the user has no open socket)
     channel_layer = get_channel_layer()
     if channel_layer is None:
         logger.warning("No channel layer - cannot send notification")
         return
     
     payload = {
+        "id": n.id,
         "title": title,
         "body": body,
         "type": type_,
-        **(extra or {}),
+        # **(extra or {}),
+        "data":n.data,
+        "createdAt": n.created_at.isoformat(),
     }
     
     async_to_sync(channel_layer.group_send) (
@@ -29,10 +45,15 @@ def send_notification_to_user(user_id, title, body, type_="info", extra=None):
         }
     )
     
+    # logger.info(
+    #     "Notification queued | to_user_id=%s | type=%s | title=%r",
+    #     user_id, type_, title,
+    # )
     logger.info(
-        "Notification queued | to_user_id=%s | type=%s | title=%r",
-        user_id, type_, title,
+        "Notification #%s sent to user user=%s",
+        n.id, user_id,
     )
+    return n
     
 def send_notification_to_room(room, title, body, type_="info", extra=None):
     """
