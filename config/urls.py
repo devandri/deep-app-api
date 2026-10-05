@@ -20,6 +20,7 @@ from django.urls import path, include
 from ninja import NinjaAPI, Swagger
 from ninja.openapi.docs import Redoc
 from accounts.api import auth_router, users_router
+from goals.api import goals_router
 from ninja.errors import ValidationError
 from accounts.utils import get_field_name
 
@@ -79,6 +80,7 @@ def validation_error_handler(request, exc):
 # Register routers
 api.add_router("/auth/", auth_router)   # /api/auth/*
 api.add_router("/users/", users_router) # /api/users/*
+api.add_router("/goals/", goals_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
