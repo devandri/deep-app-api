@@ -54,6 +54,9 @@ INSTALLED_APPS = [
     
     # Custom apps
     # 'accounts',
+    
+    # goal
+    'goals'
 ]
 
 MIDDLEWARE = [
