@@ -6,6 +6,9 @@ from utils.auth import AuthBearer
 from drf_spectacular.utils import extend_schema
 from django.core.exceptions import ValidationError
 from typing import List
+from core.schemas import ApiResponse, ErrorResponse
+from core.responses import ok
+from core.exceptions import ApiError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,7 +54,8 @@ def create(request, payload: GoalRequest):
     "/",
     auth=AuthBearer(),
     response={
-        200: List[GoalResource],
+        # 200: List[GoalResource],
+        200: ApiResponse[List[GoalResource]],
         500: ErrorResponse
     },
     summary="Get goal lists"
@@ -65,7 +69,8 @@ def list_goals(
     request,
 ):
     result = GoalService.get_goals()
-    return 200, result
+    # return 200, result
+    return 200, ok(result, "Retreive goal successfully.")
 
 
 # get detail goal by id
@@ -73,14 +78,16 @@ def list_goals(
     "/{goal_id}",
     response={
         # 200: List[GoalResource]
-        200: GoalResource
+        # 200: GoalResource
+        200: ApiResponse[GoalResource]
     },
     auth=AuthBearer(),
     summary="Retreive detail goal"
 )
 def get_goal(request, goal_id: int):
     goal = GoalService.get_goal(goal_id)
-    return 200, goal
+    # return 200, goal
+    return ok(goal)
 
 # update goal
 
