@@ -1,5 +1,6 @@
 from typing import Generic, TypeVar
 from ninja import Schema
+from pydantic import Field
 
 T = TypeVar("T")
 
@@ -17,3 +18,7 @@ class ErrorResponse(Schema):
     message: str
     code: str
     errors: list[ErrorDetail] = []
+    
+class PaginationParams(Schema):
+    page: int = Field(1, ge=1, description="Page number (starts from 1)")
+    per_page: int = Field(10, ge=1, le=100, description="Items per page (max 100)")

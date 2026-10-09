@@ -2,6 +2,7 @@ from ninja import Schema
 from typing import Optional
 from datetime import date, datetime
 from rest_framework import serializers
+from pydantic import Field
 
 class GoalSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=200)
@@ -89,3 +90,18 @@ class GoalChecklistRequest(Schema):
     description: Optional[str]
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
+    
+class GoalFilterParams(Schema):
+    name: Optional[str] = Field(None, description="Filter by name (contains)")
+    search: Optional[str] = Field(None, description="Search by all available columns")
+    
+class SortParams(Schema):
+    sort_by: Optional[str] = Field(
+        'created_at',
+        description="Sort field: name, category..."
+    )
+    sort_order: Optional[str] = Field(
+        'desc',
+        description="",
+        pattern="^(asc|desc)$"
+    )

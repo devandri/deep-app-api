@@ -1,10 +1,12 @@
 from .schemas import GoalRequest
 from .models import Goal, GoalChecklist
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from django.shortcuts import get_object_or_404
 from .repositories import GoalChecklistRepository
 import logging
 from django.core.exceptions import ValidationError
+from utils.services import ListService
+from .filters import GOAL_FILTER_SPECS, GOAL_SORT_FIELDS
 
 logger = logging.getLogger(__name__)
 
@@ -49,3 +51,26 @@ class GoalService:
     
     def list_checklists() -> List[GoalChecklist]:
         return GoalChecklistRepository.all()
+    
+    def list_checklist_extra(
+        filters: Dict[str, Any],
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        page: int = 1,
+        per_page: int = 10,
+        included_deleted: bool = False,
+        only_deleted: bool = False
+    ) -> Dict[str, Any]:
+        return ListService.get_list(
+            model=Goal,
+            filter_specs=GOAL_FILTER_SPECS,
+            sort_fields=GOAL_SORT_FIELDS,
+            filters=filters,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            page=page,
+            per_page=per_page,
+            include_deleted=included_deleted,
+            only_deleted=only_deleted,
+            default_sort="created_at"
+        )

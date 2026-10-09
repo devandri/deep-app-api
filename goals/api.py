@@ -68,9 +68,18 @@ def create(request, payload: GoalRequest):
 def list_goals(
     request,
 ):
-    result = GoalService.get_goals()
+    # result = GoalService.get_goals()
+    # # return 200, result
+    # return 200, ok(result, "Retreive goal successfully.")
+    
     # return 200, result
-    return 200, ok(result, "Retreive goal successfully.")
+    filters = {
+        # "name": "string"
+    }
+    result = GoalService.list_checklist_extra(
+        filters=filters
+    )
+    return 200, ok(result["items"], "Retreive goal successfully.")
 
 
 # get detail goal by id
