@@ -6,9 +6,10 @@ from utils.auth import AuthBearer
 from drf_spectacular.utils import extend_schema
 from django.core.exceptions import ValidationError
 from typing import List
-from core.schemas import ApiResponse, ErrorResponse
+from core.schemas import ApiResponse, ErrorResponse, ListData
 from core.responses import ok
 from core.exceptions import ApiError
+from utils.responses import paginated
 import logging
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,8 @@ def create(request, payload: GoalRequest):
     auth=AuthBearer(),
     response={
         # 200: List[GoalResource],
-        200: ApiResponse[List[GoalResource]],
+        # 200: ApiResponse[List[GoalResource]],
+        200: ApiResponse[ListData[GoalResource]],
         500: ErrorResponse
     },
     summary="Get goal lists"
@@ -79,7 +81,13 @@ def list_goals(
     result = GoalService.list_checklist_extra(
         filters=filters
     )
-    return 200, ok(result["items"], "Retreive goal successfully.")
+    # return 200, ok(result["items"], "Retreive goal successfully.")
+    # return 200, ok(result, "Retreive goal successfully.")
+    return paginated(
+        items=result["items"],
+        pagination=result["pagination"],
+        message="Users retrieved successfully",
+    )
 
 
 # get detail goal by id
