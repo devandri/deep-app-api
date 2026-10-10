@@ -1,21 +1,39 @@
-from ninja import Router
+from ninja import Router, Query, Schema
 from .services import GoalService
 from .schemas import GoalSerializer, GoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistResource
 from utils.responses import ErrorResponse
 from utils.auth import AuthBearer
 from drf_spectacular.utils import extend_schema
 from django.core.exceptions import ValidationError
-from typing import List
+from typing import List, Optional
 from core.schemas import ApiResponse, ErrorResponse, ListData
 from core.responses import ok
 from core.exceptions import ApiError
 from utils.responses import paginated
+from pydantic import Field
 import logging
 
 logger = logging.getLogger(__name__)
 
 goals_router = Router(tags=["Goals"])
 checklists_router = Router(tags=["Checklists"])
+
+class GoalListQuery(Schema):
+    # filters
+    search: Optional[str] = None
+    name: Optional[str] = None
+    
+    # sorting
+    sort_by: str = "created_at"
+    sort_order: str = Field("desc", pattern="^(asc|desc)$")
+    
+    # pagination
+    page: int = Field(1, ge=1)
+    per_page: int = Field(10, ge=1, le=100)
+    
+    # soft-deleting scope
+    include_deleted: bool = False
+    only_deleted: bool = False
 
 """Goal"""
 # create a new goal
@@ -68,7 +86,8 @@ def create(request, payload: GoalRequest):
 #     }
 # )
 def list_goals(
-    request,
+    request, 
+    params: GoalListQuery = Query(...)
 ):
     # result = GoalService.get_goals()
     # # return 200, result
@@ -76,10 +95,15 @@ def list_goals(
     
     # return 200, result
     filters = {
-        # "name": "string"
+        "search": params.search,
+        "name": params.name
     }
     result = GoalService.list_checklist_extra(
-        filters=filters
+        filters=filters,
+        sort_by=params.sort_by,
+        sort_order=params.sort_order,
+        page=params.page,
+        per_page=params.per_page
     )
     # return 200, ok(result["items"], "Retreive goal successfully.")
     # return 200, ok(result, "Retreive goal successfully.")

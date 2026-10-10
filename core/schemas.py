@@ -12,6 +12,7 @@ T = TypeVar("T")
 
 class ApiResponse(Schema, Generic[T]):
     """Standard success envelope."""
+    success: bool = True
     status: str = "success"
     code: Optional[int] = None
     message: str = "OK"
@@ -39,8 +40,8 @@ class PaginationMeta(Schema):
     total_pages: int
     has_next: bool
     has_previous: bool
-    start: int = Field(1, alias="from")
-    end: int = Field(0, alias="to")
+    start: int = Field(1, alias="from", serialization_alias="from", validation_alias="from")
+    end: int = Field(0, alias="to", serialization_alias="to", validation_alias="from")
     
     class Config:
         populate_by_name = True
@@ -48,4 +49,5 @@ class PaginationMeta(Schema):
 class ListData(Schema, Generic[T]):
     """Nested payload for list endpoints."""
     items: List[T]
-    pagination: PaginationMeta
+    # pagination: PaginationMeta
+    pagination: dict
