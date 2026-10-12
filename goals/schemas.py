@@ -58,6 +58,7 @@ class GoalResourceWithChecklists(Schema):
     description: Optional[str]
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
+    status: str = 'done'
     created_at: datetime
     updated_at: datetime
     
