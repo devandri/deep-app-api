@@ -13,6 +13,7 @@ GOAL_FILTER_SPECS = {
 }
 
 GOAL_SORT_FIELDS = {
+    "id": "id",
     "name": "name",
     "category": "category",
     "start_date": "start_date",

@@ -1,5 +1,5 @@
 from ninja import Schema
-from typing import Optional
+from typing import Optional, List
 from datetime import date, datetime
 from rest_framework import serializers
 from pydantic import Field
@@ -51,6 +51,16 @@ class GoalChecklistSchema(Schema):
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
     
+class GoalResourceWithChecklists(Schema):
+    id: int
+    title: str
+    period: str
+    description: Optional[str]
+    is_auto_complete: Optional[bool] = False
+    is_auto_incomplete: Optional[bool] = False
+    created_at: datetime
+    updated_at: datetime
+    
 class GoalResource(Schema):
     id: int
     name: str
@@ -62,6 +72,7 @@ class GoalResource(Schema):
     status: str
     created_at: datetime
     updated_at: datetime
+    goal_checklists: List[GoalResourceWithChecklists]
     
 class GoalChecklistResource(Schema):
     id: int
