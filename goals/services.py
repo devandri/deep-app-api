@@ -74,3 +74,6 @@ class GoalService:
             only_deleted=only_deleted,
             default_sort="created_at"
         )
+        
+    def delete_goal(goal: Goal):
+        GoalChecklistRepository.delete(goal)

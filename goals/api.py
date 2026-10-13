@@ -135,6 +135,24 @@ def get_goal(request, goal_id: int):
 # update goal
 
 # delete goal
+@goals_router.delete(
+    "/{goal_id}",
+    response={
+        204: None,
+        404: ErrorResponse
+    },
+    auth=AuthBearer(),
+    summary="Soft delete goal",
+    description=""
+)
+def delete_goal(request, goal_id: int):
+    try:
+        goal = GoalService.get_goal(goal_id)
+    except ValidationError as e:
+        return 404, { "code": "not_found", "messsage": str(e) }
+    
+    GoalService.delete_goal(goal)
+    return 204, None
 
 """Checklist"""
 # create a new checklist

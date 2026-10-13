@@ -1,4 +1,4 @@
-from .models import GoalChecklist
+from .models import Goal, GoalChecklist
 
 class GoalChecklistRepository:
     @staticmethod
@@ -13,3 +13,7 @@ class GoalChecklistRepository:
     @staticmethod
     def get_by_id(checklist_id = int):
         return GoalChecklist.objects.filter(id=checklist_id, deleted_at__isnull=True).first()
+    
+    @staticmethod
+    def delete(goal: Goal):
+        goal.delete()
