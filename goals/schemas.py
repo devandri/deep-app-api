@@ -117,3 +117,12 @@ class SortParams(Schema):
         description="",
         pattern="^(asc|desc)$"
     )
+    
+class BulkDeleteRequest(Schema):
+    # ids: List[int] = Field(min_length=1, max_length=100)
+    ids: list[int] = Field(min_length=1, max_length=100)
+    
+class BulkDeleteResponse(Schema):
+    requested: int
+    deleted: int
+    not_found: List[int]

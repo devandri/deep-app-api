@@ -1,6 +1,6 @@
 from ninja import Router, Query, Schema
 from .services import GoalService
-from .schemas import GoalSerializer, GoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistResource
+from .schemas import GoalSerializer, GoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistResource, BulkDeleteRequest, BulkDeleteResponse
 from utils.responses import ErrorResponse
 from utils.auth import AuthBearer
 from drf_spectacular.utils import extend_schema
@@ -11,6 +11,9 @@ from core.responses import ok
 from core.exceptions import ApiError
 from utils.responses import paginated
 from pydantic import Field
+from django.db.models import QuerySet
+from django.db import transaction
+from .models import Goal
 import logging
 
 logger = logging.getLogger(__name__)
@@ -153,6 +156,42 @@ def delete_goal(request, goal_id: int):
     
     GoalService.delete_goal(goal)
     return 204, None
+
+# bulk delete goal
+@goals_router.delete(
+    "/bulk/",
+    response=BulkDeleteResponse,
+    auth=AuthBearer(),
+    summary="Bulk soft delete goal",
+    description="",
+)
+def bulk_delete_goals(request, payload: BulkDeleteRequest):
+    queryset: QuerySet[Goal] = Goal.objects.filter(
+        # Example: category=request.goal.category
+    )
+    # requested_ids = List(dict.fromkeys(payload.ids))
+    requested_ids = list(dict.fromkeys(payload.ids))
+    
+    with transaction.atomic():
+        existing_ids = set(
+            queryset.filter(id__in=requested_ids).values_list("id", flat=True)
+        )
+        
+        deleted_ids = existing_ids
+        
+        if deleted_ids:
+            queryset.filter(id__in=deleted_ids).delete()
+            
+        return {
+            "requested": len(requested_ids),
+            "deleted": len(deleted_ids),
+            "not_found": [
+                goal_id
+                for goal_id in requested_ids
+                if goal_id not in existing_ids
+                
+            ]
+        }
 
 """Checklist"""
 # create a new checklist
