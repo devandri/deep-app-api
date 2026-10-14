@@ -1,4 +1,5 @@
 from django.db import models
+from core.models import SoftDeleteModel
 
 """
 id (PK)
@@ -10,7 +11,7 @@ end_date (date)
 description (text)
 status (string=20)
 """
-class Goal(models.Model):
+class Goal(SoftDeleteModel):
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=50)
     objective = models.CharField(max_length=200)
@@ -38,7 +39,7 @@ description (text)
 is_auto_complete (boolean)
 is_auto_incomplete (boolean)
 """
-class GoalChecklist(models.Model):
+class GoalChecklist(SoftDeleteModel):
     goal = models.ForeignKey(
         Goal, on_delete=models.CASCADE, related_name='goal_checklists'
     )
@@ -68,7 +69,7 @@ is_complete (boolen)
 is_incomplete (boolean)
 completed_at (date_time)
 """
-class ChecklistLog(models.Model):
+class ChecklistLog(SoftDeleteModel):
     goal_checklist = models.ForeignKey(
         GoalChecklist, on_delete=models.CASCADE, related_name='checklist_logs'
     )
