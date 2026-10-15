@@ -136,6 +136,27 @@ def get_goal(request, goal_id: int):
     return ok(goal)
 
 # update goal
+@goals_router.put(
+    "/{goal_id}",
+    response={
+        200: ApiResponse[GoalResource],
+        404: ErrorResponse,
+        422: ErrorResponse,
+    },
+    auth=AuthBearer(),
+    summary="Update goal",
+    description=""
+)
+def update_goal(request, goal_id: int, payload: GoalRequest):
+    try:
+        exist_goal = Goal.objects.get(id=goal_id)
+        if not exist_goal:
+            return 404, { "code": "not_found", "message": "Goal not found."}
+        
+        goal = GoalService.update_goal(goal_id, exist_goal, payload)
+        return ok(goal)
+    except Exception as e:
+        return 422, { "code": "exception", "message": str(e) }
 
 # delete goal
 @goals_router.delete(

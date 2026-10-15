@@ -25,6 +25,19 @@ class GoalService:
         )
         
     @staticmethod
+    def update_goal(goal_id, goal, data: GoalRequest) -> Goal:
+        # goal = Goal.objects.get(id=goal_id)
+        goal.name = data.name
+        goal.category = data.category
+        goal.objective = data.objective
+        goal.start_date = data.start_date
+        goal.end_date = data.end_date
+        goal.description = data.description
+        goal.status = data.status
+        goal.save()
+        return goal
+        
+    @staticmethod
     def get_goals() -> List[Goal]:
         # return {
         #     'success': True,
@@ -77,3 +90,4 @@ class GoalService:
         
     def delete_goal(goal: Goal):
         GoalChecklistRepository.delete(goal)
+        
