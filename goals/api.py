@@ -177,7 +177,7 @@ def list_goal_checklists(request, goal_id: int):
         400: ErrorResponse
     },
     auth=AuthBearer(),
-    summary="Create a new checklist"
+    summary="Create a new goal checklist"
 )
 def create_goal_checklist(request, goal_id: int, payload: GoalChecklistRequestV2):
     data = payload.dict()
@@ -198,7 +198,7 @@ def create_goal_checklist(request, goal_id: int, payload: GoalChecklistRequestV2
         400: ErrorResponse
     },
     auth=AuthBearer(),
-    summary="Create a new checklist"
+    summary="Update goal checklist"
 )
 def update_goal_checklist(request, goal_id: int, checklist_id: int, payload: GoalChecklistRequestV2):
     try:
@@ -216,16 +216,16 @@ def update_goal_checklist(request, goal_id: int, checklist_id: int, payload: Goa
         404: ErrorResponse
     },
     auth=AuthBearer(),
-    summary="Soft delete goal",
+    summary="Soft delete goal checklist",
     description=""
 )
 def delete_goal_checklist(request, goal_id: int, checklist_id: int):
     try:
-        goal = GoalService.get_goal(goal_id)
+        goal_checklist = GoalService.get_goal_checklist_by_id_goal_id(checklist_id, goal_id)
     except ValidationError as e:
         return 404, { "code": "not_found", "messsage": str(e) }
     
-    GoalService.delete_goal(goal)
+    GoalService.delete_goal_checklist(goal_checklist)
     return 204, None
 
 # delete goal

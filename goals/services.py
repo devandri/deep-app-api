@@ -68,6 +68,13 @@ class GoalService:
         # return Goal.objects.filter(id=goal_id, deleted_at__isnull=True)
         return get_object_or_404(Goal, id=goal_id)
     
+    def get_goal_checklist_by_id_goal_id(id, goal_id):
+        goal_checklist = GoalChecklistRepository.check_list_by_id_and_goal_id(id, goal_id)
+        if goal_checklist is None:
+            raise ValidationError("Goal checklist not found.")
+        # return GoalChecklistRepository.check_list_by_id_and_goal_id(id, goal_id)
+        return goal_checklist
+    
     def create_checklist(**data) -> GoalChecklist:
         if (GoalChecklistRepository.get_goal_by_id(data["goal_id"]) is None):
             raise ValidationError("Goal not found.")
@@ -110,4 +117,7 @@ class GoalService:
         
     def delete_goal(goal: Goal):
         GoalChecklistRepository.delete(goal)
+        
+    def delete_goal_checklist(goal_checklist: GoalChecklist):
+        GoalChecklistRepository.delete_goal_checklist(goal_checklist)
         
