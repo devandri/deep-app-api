@@ -1,4 +1,4 @@
-from .schemas import GoalRequest
+from .schemas import GoalRequest, GoalChecklistRequestV2
 from .models import Goal, GoalChecklist
 from typing import List, Optional, Any, Dict
 from django.shortcuts import get_object_or_404
@@ -23,7 +23,7 @@ class GoalService:
             description=data.description,
             status=data.status,
         )
-        
+
     @staticmethod
     def update_goal(goal_id, goal, data: GoalRequest) -> Goal:
         # goal = Goal.objects.get(id=goal_id)
@@ -36,6 +36,21 @@ class GoalService:
         goal.status = data.status
         goal.save()
         return goal
+        
+    @staticmethod
+    def update_goal_checklist(checklist_id, goal_id, data: GoalChecklistRequestV2) -> GoalChecklist:
+        goal_checklist = GoalChecklist.objects.get(id=checklist_id)
+        if goal_checklist is None:
+            raise ValidationError("Goal checklist not found.")
+        if (GoalChecklistRepository.get_goal_by_id(goal_id) is None):
+                raise ValidationError("Goal not found.")
+        goal_checklist.title = data.title
+        goal_checklist.period = data.period
+        goal_checklist.description = data.description
+        goal_checklist.is_auto_complete = data.is_auto_complete
+        goal_checklist.is_auto_incomplete = data.is_auto_incomplete
+        goal_checklist.save()
+        return goal_checklist
         
     @staticmethod
     def get_goals() -> List[Goal]:

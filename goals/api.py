@@ -179,7 +179,7 @@ def list_goal_checklists(request, goal_id: int):
     auth=AuthBearer(),
     summary="Create a new checklist"
 )
-def create_goal_checklist(request, goal_id, payload: GoalChecklistRequestV2):
+def create_goal_checklist(request, goal_id: int, payload: GoalChecklistRequestV2):
     data = payload.dict()
     data["goal_id"] = goal_id
     # payload.goal_id = goal_id
@@ -192,7 +192,7 @@ def create_goal_checklist(request, goal_id, payload: GoalChecklistRequestV2):
     return 201, checklist
 
 @goals_router.put(
-    "/{goal_id}/checklist",
+    "/{goal_id}/checklist/{checklist_id}",
     response={
         201: GoalChecklistResource,
         400: ErrorResponse
@@ -200,19 +200,17 @@ def create_goal_checklist(request, goal_id, payload: GoalChecklistRequestV2):
     auth=AuthBearer(),
     summary="Create a new checklist"
 )
-def update_goal_checklist(request, goal_id, payload: GoalChecklistRequestV2):
-    data = payload.dict()
-    data["goal_id"] = goal_id
-    # try:
-    #     checklist = GoalService.create_checklist(**data)
-    # except ValidationError as e:
-    #     return 400, {"code": "validation_error", "message": str(e)}
-    # except Exception as e:
-    #     return 400, {"code": "validation_error", "message": str(e)}
-    # return 201, checklist
+def update_goal_checklist(request, goal_id: int, checklist_id: int, payload: GoalChecklistRequestV2):
+    try:
+        checklist = GoalService.update_goal_checklist(checklist_id, goal_id, payload)
+    except ValidationError as e:
+        return 400, {"code": "validation_error", "message": str(e)}
+    except Exception as e:
+        return 400, {"code": "exception_error", "message": str(e)}
+    return 201, checklist
 
 @goals_router.delete(
-    "/{goal_id}/checklist",
+    "/{goal_id}/checklist/{checklist_id}",
     response={
         204: None,
         404: ErrorResponse
@@ -221,7 +219,7 @@ def update_goal_checklist(request, goal_id, payload: GoalChecklistRequestV2):
     summary="Soft delete goal",
     description=""
 )
-def delete_goal_checklist(request, goal_id: int):
+def delete_goal_checklist(request, goal_id: int, checklist_id: int):
     try:
         goal = GoalService.get_goal(goal_id)
     except ValidationError as e:
