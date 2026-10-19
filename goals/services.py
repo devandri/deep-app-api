@@ -65,6 +65,9 @@ class GoalService:
     def list_checklists() -> List[GoalChecklist]:
         return GoalChecklistRepository.all()
     
+    def list_checklists_by_goal_id(goal_id: int):
+        return GoalChecklistRepository.list_by_goal_id(goal_id)
+    
     def list_checklist_extra(
         filters: Dict[str, Any],
         sort_by: str = "created_at",

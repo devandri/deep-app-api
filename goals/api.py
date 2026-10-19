@@ -1,6 +1,6 @@
 from ninja import Router, Query, Schema
 from .services import GoalService
-from .schemas import GoalSerializer, GoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistResource, BulkDeleteRequest, BulkDeleteResponse
+from .schemas import GoalSerializer, GoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistRequestV2, GoalChecklistResource, BulkDeleteRequest, BulkDeleteResponse
 from utils.responses import ErrorResponse
 from utils.auth import AuthBearer
 from drf_spectacular.utils import extend_schema
@@ -157,6 +157,39 @@ def update_goal(request, goal_id: int, payload: GoalRequest):
         return ok(goal)
     except Exception as e:
         return 422, { "code": "exception", "message": str(e) }
+    
+@goals_router.get(
+    "/{goal_id}/checklist",
+    response={
+        200: List[GoalChecklistResource]
+    },
+    auth=AuthBearer(),
+    summary="Get all checklists"
+)
+def list_checklists(request, goal_id: int):
+    result = GoalService.list_checklists_by_goal_id(goal_id)
+    return 200, result
+
+@goals_router.post(
+    "/{goal_id}/checklist",
+    response={
+        201: GoalChecklistResource,
+        400: ErrorResponse
+    },
+    auth=AuthBearer(),
+    summary="Create a new checklist"
+)
+def create_checklist(request, goal_id, payload: GoalChecklistRequestV2):
+    data = payload.dict()
+    data["goal_id"] = goal_id
+    # payload.goal_id = goal_id
+    try:
+        checklist = GoalService.create_checklist(**data)
+    except ValidationError as e:
+        return 400, {"code": "validation_error", "message": str(e)}
+    except Exception as e:
+        return 400, {"code": "validation_error", "message": str(e)}
+    return 201, checklist
 
 # delete goal
 @goals_router.delete(

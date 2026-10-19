@@ -103,6 +103,13 @@ class GoalChecklistRequest(Schema):
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
     
+class GoalChecklistRequestV2(Schema):
+    title: str = Field(...)
+    period: str
+    description: Optional[str]
+    is_auto_complete: Optional[bool] = False
+    is_auto_incomplete: Optional[bool] = False
+    
 class GoalFilterParams(Schema):
     name: Optional[str] = Field(None, description="Filter by name (contains)")
     search: Optional[str] = Field(None, description="Search by all available columns")
