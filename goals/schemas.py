@@ -47,9 +47,25 @@ class GoalChecklistSchema(Schema):
     title: str
     goal: Optional[GoalSchema] = None
     period: str
+    status: str | None = None
     description: Optional[str]
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
+    
+class ChecklistLogResourceWithGoal(Schema):
+    id: int
+    title: str
+    period: str
+    description: Optional[str]
+    is_auto_complete: Optional[bool] = False
+    is_complete: Optional[bool] | None = None
+    completed_at: datetime | None = None
+    is_auto_incomplete: Optional[bool] = False
+    is_incomplete: Optional[bool] | None = None
+    incompleted_at: datetime | None = None
+    date: date
+    created_at: datetime
+    updated_at: datetime
     
 class GoalResourceWithChecklists(Schema):
     id: int
@@ -58,9 +74,10 @@ class GoalResourceWithChecklists(Schema):
     description: Optional[str]
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
-    status: str = 'done'
+    status: str | None = None
     created_at: datetime
     updated_at: datetime
+    checklist_log: Optional[ChecklistLogResourceWithGoal] = None
     
 class GoalResource(Schema):
     id: int
@@ -83,6 +100,23 @@ class GoalChecklistResource(Schema):
     description: Optional[str]
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
+    status: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    
+class ChecklistLogResource(Schema):
+    id: int
+    title: str
+    goal_checklist: Optional[GoalChecklistSchema] = None
+    period: str
+    description: Optional[str]
+    is_auto_complete: Optional[bool] = False
+    is_complete: Optional[bool] | None = None
+    completed_at: datetime | None = None
+    is_auto_incomplete: Optional[bool] = False
+    is_incomplete: Optional[bool] | None = None
+    incompleted_at: datetime | None = None
+    date: date
     created_at: datetime
     updated_at: datetime
     
@@ -133,3 +167,8 @@ class BulkDeleteResponse(Schema):
     requested: int
     deleted: int
     not_found: List[int]
+    
+class ToggleGoalChecklistRequest(Schema):
+    date: date
+    is_complete: bool
+    is_incomplete: bool

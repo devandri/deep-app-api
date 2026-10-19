@@ -1,6 +1,6 @@
 from ninja import Router, Query, Schema
 from .services import GoalService
-from .schemas import GoalSerializer, GoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistRequestV2, GoalChecklistResource, BulkDeleteRequest, BulkDeleteResponse
+from .schemas import GoalSerializer, GoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistRequestV2, GoalChecklistResource, BulkDeleteRequest, BulkDeleteResponse, ToggleGoalChecklistRequest, ChecklistLogResource
 from utils.responses import ErrorResponse
 from utils.auth import AuthBearer
 from drf_spectacular.utils import extend_schema
@@ -13,7 +13,8 @@ from utils.responses import paginated
 from pydantic import Field
 from django.db.models import QuerySet
 from django.db import transaction
-from .models import Goal
+from .models import Goal, ChecklistLog
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -208,6 +209,59 @@ def update_goal_checklist(request, goal_id: int, checklist_id: int, payload: Goa
     except Exception as e:
         return 400, {"code": "exception_error", "message": str(e)}
     return 201, checklist
+
+@goals_router.post(
+    "/{goal_id}/checklist/{checklist_id}/toggle",
+    response={
+        201: ChecklistLogResource,
+        400: ErrorResponse,
+        404: ErrorResponse,
+    },
+    auth=AuthBearer(),
+    summary="Toggle (check/uncheck) goal checklist"
+)
+def toggle_goal_checklist(request, goal_id: int, checklist_id: int, payload: ToggleGoalChecklistRequest):
+    # try:
+    #     checklist = GoalService.update_goal_checklist(checklist_id, goal_id, payload)
+    # except ValidationError as e:
+    #     return 400, {"code": "validation_error", "message": str(e)}
+    # except Exception as e:
+    #     return 400, {"code": "exception_error", "message": str(e)}
+    # return 201, checklist
+    
+    if payload.is_complete == payload.is_incomplete:
+        return 400, {"code": "validation_error", "message": "Cannot set same value for is_complete and is_incomplete param."}
+    
+    try:
+        goal_checklist = GoalService.get_goal_checklist_by_id_goal_id(checklist_id, goal_id)
+    except ValidationError as e:
+        return 404, { "code": "not_found", "message": str(e) }
+    except Exception as e:
+        return 400, {"code": "exception_error", "message": str(e)}
+    
+    # GoalService.delete_goal_checklist(goal_checklist)
+    # return 204, None
+    
+    with transaction.atomic():
+        log, _ = ChecklistLog.objects.get_or_create(
+            goal_checklist=goal_checklist, # goal_checklist_id
+            date=payload.date,
+            defaults={
+                "is_complete": payload.is_complete,
+                "is_incomplete": payload.is_incomplete,
+            }
+        )
+        if log.is_complete != payload.is_complete:
+            log.is_complete = payload.is_complete
+            log.completed_at = timezone.now() if payload.is_complete else None
+            log.save(update_fields=["is_complete", "completed_at"])
+            
+        if log.is_incomplete != payload.is_incomplete:
+            log.is_incomplete = payload.is_incomplete
+            log.incompleted_at = timezone.now() if payload.is_incomplete else None
+            log.save(update_fields=["is_incomplete", "incompleted_at"])
+        
+    return 201, log
 
 @goals_router.delete(
     "/{goal_id}/checklist/{checklist_id}",
