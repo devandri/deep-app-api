@@ -166,7 +166,7 @@ def update_goal(request, goal_id: int, payload: GoalRequest):
     auth=AuthBearer(),
     summary="Get all checklists"
 )
-def list_checklists(request, goal_id: int):
+def list_goal_checklists(request, goal_id: int):
     result = GoalService.list_checklists_by_goal_id(goal_id)
     return 200, result
 
@@ -179,7 +179,7 @@ def list_checklists(request, goal_id: int):
     auth=AuthBearer(),
     summary="Create a new checklist"
 )
-def create_checklist(request, goal_id, payload: GoalChecklistRequestV2):
+def create_goal_checklist(request, goal_id, payload: GoalChecklistRequestV2):
     data = payload.dict()
     data["goal_id"] = goal_id
     # payload.goal_id = goal_id
@@ -190,6 +190,45 @@ def create_checklist(request, goal_id, payload: GoalChecklistRequestV2):
     except Exception as e:
         return 400, {"code": "validation_error", "message": str(e)}
     return 201, checklist
+
+@goals_router.put(
+    "/{goal_id}/checklist",
+    response={
+        201: GoalChecklistResource,
+        400: ErrorResponse
+    },
+    auth=AuthBearer(),
+    summary="Create a new checklist"
+)
+def update_goal_checklist(request, goal_id, payload: GoalChecklistRequestV2):
+    data = payload.dict()
+    data["goal_id"] = goal_id
+    # try:
+    #     checklist = GoalService.create_checklist(**data)
+    # except ValidationError as e:
+    #     return 400, {"code": "validation_error", "message": str(e)}
+    # except Exception as e:
+    #     return 400, {"code": "validation_error", "message": str(e)}
+    # return 201, checklist
+
+@goals_router.delete(
+    "/{goal_id}/checklist",
+    response={
+        204: None,
+        404: ErrorResponse
+    },
+    auth=AuthBearer(),
+    summary="Soft delete goal",
+    description=""
+)
+def delete_goal_checklist(request, goal_id: int):
+    try:
+        goal = GoalService.get_goal(goal_id)
+    except ValidationError as e:
+        return 404, { "code": "not_found", "messsage": str(e) }
+    
+    GoalService.delete_goal(goal)
+    return 204, None
 
 # delete goal
 @goals_router.delete(
@@ -253,7 +292,9 @@ def bulk_delete_goals(request, payload: BulkDeleteRequest):
     "/",
     response={
         201: GoalChecklistResource,
-        400: ErrorResponse
+        400: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
     },
     auth=AuthBearer(),
     summary="Create a new checklist"
@@ -263,6 +304,8 @@ def create_checklist(request, payload: GoalChecklistRequest):
         checklist = GoalService.create_checklist(**payload.dict())
     except ValidationError as e:
         return 400, {"code": "validation_error", "message": str(e)}
+    except Exception as e:
+        return 500, {"code": "exception", "message": str(e)}
     return 201, checklist
 
 # get checklist lists
@@ -283,7 +326,8 @@ def list_checklists(request):
     "/{checklist_id}",
     response={
         200: GoalChecklistResource,
-        404: ErrorResponse
+        404: ErrorResponse,
+        500: ErrorResponse,
     },
     auth=AuthBearer(),
     summary="Get detail checklist"
@@ -293,6 +337,8 @@ def get_checklist(request, checklist_id: int):
         checklist = GoalService.get_checklist(checklist_id)
     except ValidationError as e:
         return 404, {"code": "not_found", "message": str(e)}
+    except Exception as e:
+        return 500, {"code": "exception", "message": str(e)}
     return 200, checklist
 
 # update checklist

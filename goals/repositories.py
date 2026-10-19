@@ -20,5 +20,9 @@ class GoalChecklistRepository:
         return GoalChecklist.objects.filter(id=checklist_id, deleted_at__isnull=True).first()
     
     @staticmethod
+    def get_goal_by_id(goal_id = int):
+        return Goal.objects.filter(id=goal_id, deleted_at__isnull=True).first()
+    
+    @staticmethod
     def delete(goal: Goal):
         goal.delete()

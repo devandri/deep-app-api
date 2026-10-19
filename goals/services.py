@@ -54,8 +54,10 @@ class GoalService:
         return get_object_or_404(Goal, id=goal_id)
     
     def create_checklist(**data) -> GoalChecklist:
+        if (GoalChecklistRepository.get_goal_by_id(data["goal_id"]) is None):
+            raise ValidationError("Goal not found.")
         return GoalChecklistRepository.create(**data)
-    
+
     def get_checklist(checklist_id: int) -> GoalChecklist:
         goal_checklist = GoalChecklistRepository.get_by_id(checklist_id)
         if goal_checklist is None:
