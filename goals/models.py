@@ -18,7 +18,7 @@ class Goal(SoftDeleteModel):
     start_date = models.DateField(blank=True, null=True, default=None)
     end_date = models.DateField(blank=True, null=True, default=None)
     description = models.TextField(blank=True, default="")
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20) # draft/progress/done
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True, default=None)
@@ -48,6 +48,7 @@ class GoalChecklist(SoftDeleteModel):
     description = models.TextField(blank=True, default="")
     is_auto_complete = models.BooleanField(default=False)
     is_auto_incomplete = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, null=True, blank=True, default=None) # active/inactive
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True, default=None)
@@ -79,7 +80,9 @@ class ChecklistLog(SoftDeleteModel):
     is_auto_complete = models.BooleanField(default=False)
     is_auto_incomplete = models.BooleanField(default=False)
     is_complete = models.BooleanField(null=True, blank=True, default=None)
+    completed_at = models.DateTimeField(null=True, blank=True, default=None)
     is_incomplete = models.BooleanField(null=True, blank=True, default=None)
+    incompleted_at = models.DateTimeField(null=True, blank=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True, default=None)
