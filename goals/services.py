@@ -103,7 +103,6 @@ class GoalService:
         per_page: int = 10,
         included_deleted: bool = False,
         only_deleted: bool = False,
-        # log_date: date = timezone.localdate(),
     ) -> Dict[str, Any]:
         return ListService.get_list(
             model=Goal,
@@ -118,15 +117,18 @@ class GoalService:
             only_deleted=only_deleted,
             default_sort="created_at",
             prefetches=[
+                # Prefetch(
+                #     "goal_checklists",
+                #     queryset=GoalChecklist.objects.prefetch_related(
+                #         Prefetch(
+                #             "checklist_logs",
+                #             queryset=ChecklistLog.objects.filter(date=filters["log_date"])
+                #         )
+                #     )
+                # )
                 Prefetch(
-                    "goal_checklists",
-                    queryset=GoalChecklist.objects.prefetch_related(
-                        Prefetch(
-                            "checklist_logs",
-                            # queryset=ChecklistLog.objects.filter(date=log_date)
-                            queryset=ChecklistLog.objects.filter(date=filters["log_date"])
-                        )
-                    )
+                    "goal_checklists__checklist_logs",
+                    queryset=ChecklistLog.objects.filter(date=filters["log_date"])
                 )
             ]
         )

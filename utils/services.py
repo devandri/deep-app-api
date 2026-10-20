@@ -39,7 +39,9 @@ class ListService:
             qs, sort_by, sort_order, sort_fields, default=default_sort
         )
         
-        if prefetches:
+        # if prefetches: # (always filter even if log_date is empty)
+        #     qs = qs.prefetch_related(*prefetches)
+        if filters["log_date"]: # filter only when the param log_date is not empty
             qs = qs.prefetch_related(*prefetches)
         
         # 4. pagination
