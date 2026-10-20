@@ -77,7 +77,7 @@ class GoalResourceWithChecklists(Schema):
     status: str | None = None
     created_at: datetime
     updated_at: datetime
-    checklist_log: Optional[ChecklistLogResourceWithGoal] = None
+    checklist_logs: list[ChecklistLogResourceWithGoal] = []
     
 class GoalResource(Schema):
     id: int

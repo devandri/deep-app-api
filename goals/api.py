@@ -15,6 +15,7 @@ from django.db.models import QuerySet
 from django.db import transaction
 from .models import Goal, ChecklistLog
 from django.utils import timezone
+from datetime import date
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class GoalListQuery(Schema):
     search: Optional[str] = None
     name: Optional[str] = None
     status: Optional[str] = None
+    log_date: Optional[date] = None
     
     # sorting
     sort_by: str = "created_at"
@@ -103,13 +105,15 @@ def list_goals(
         "search": params.search,
         "name": params.name,
         "status": params.status,
+        "log_date": params.log_date
     }
     result = GoalService.list_checklist_extra(
         filters=filters,
         sort_by=params.sort_by,
         sort_order=params.sort_order,
         page=params.page,
-        per_page=params.per_page
+        per_page=params.per_page,
+        # log_date=timezone.localdate(),
     )
     # return 200, ok(result["items"], "Retreive goal successfully.")
     # return 200, ok(result, "Retreive goal successfully.")
@@ -243,20 +247,21 @@ def toggle_goal_checklist(request, goal_id: int, checklist_id: int, payload: Tog
     # return 204, None
     
     with transaction.atomic():
-        log, _ = ChecklistLog.objects.get_or_create(
+        log, created = ChecklistLog.objects.get_or_create(
             goal_checklist=goal_checklist, # goal_checklist_id
             date=payload.date,
             defaults={
-                "is_complete": payload.is_complete,
-                "is_incomplete": payload.is_incomplete,
+                "is_complete": False,
+                "is_incomplete": False,
             }
         )
-        if log.is_complete != payload.is_complete:
+            
+        if created or log.is_complete != payload.is_complete:
             log.is_complete = payload.is_complete
             log.completed_at = timezone.now() if payload.is_complete else None
             log.save(update_fields=["is_complete", "completed_at"])
             
-        if log.is_incomplete != payload.is_incomplete:
+        if created or log.is_incomplete != payload.is_incomplete:
             log.is_incomplete = payload.is_incomplete
             log.incompleted_at = timezone.now() if payload.is_incomplete else None
             log.save(update_fields=["is_incomplete", "incompleted_at"])

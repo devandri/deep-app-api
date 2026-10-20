@@ -1,5 +1,5 @@
-from typing import Any, Dict, Type, Optional
-from django.db.models import Model
+from typing import Any, Dict, Type, Optional, List, Union
+from django.db.models import Model, Prefetch
 from .query import QueryEngine, FilterSpec
 
 class ListService:
@@ -24,6 +24,7 @@ class ListService:
         include_deleted: bool = False,
         only_deleted: bool = False,
         default_sort: str = "-id",
+        prefetches: Optional[List[Union[str, Prefetch]]] = None,
     ) -> Dict[str, Any]:
         # 1. base queryset (handles soft delete)
         qs = QueryEngine.get_base_queryset(
@@ -37,6 +38,9 @@ class ListService:
         qs = QueryEngine.apply_sorting(
             qs, sort_by, sort_order, sort_fields, default=default_sort
         )
+        
+        if prefetches:
+            qs = qs.prefetch_related(*prefetches)
         
         # 4. pagination
         return QueryEngine.paginate(qs, page=page, per_page=per_page)

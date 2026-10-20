@@ -1,12 +1,15 @@
 from .schemas import GoalRequest, GoalChecklistRequestV2
-from .models import Goal, GoalChecklist
+from .models import Goal, GoalChecklist, ChecklistLog
 from typing import List, Optional, Any, Dict
 from django.shortcuts import get_object_or_404
 from .repositories import GoalChecklistRepository
+from django.db.models import Prefetch
 import logging
 from django.core.exceptions import ValidationError
 from utils.services import ListService
 from .filters import GOAL_FILTER_SPECS, GOAL_SORT_FIELDS
+from datetime import date
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +102,8 @@ class GoalService:
         page: int = 1,
         per_page: int = 10,
         included_deleted: bool = False,
-        only_deleted: bool = False
+        only_deleted: bool = False,
+        # log_date: date = timezone.localdate(),
     ) -> Dict[str, Any]:
         return ListService.get_list(
             model=Goal,
@@ -112,7 +116,19 @@ class GoalService:
             per_page=per_page,
             include_deleted=included_deleted,
             only_deleted=only_deleted,
-            default_sort="created_at"
+            default_sort="created_at",
+            prefetches=[
+                Prefetch(
+                    "goal_checklists",
+                    queryset=GoalChecklist.objects.prefetch_related(
+                        Prefetch(
+                            "checklist_logs",
+                            # queryset=ChecklistLog.objects.filter(date=log_date)
+                            queryset=ChecklistLog.objects.filter(date=filters["log_date"])
+                        )
+                    )
+                )
+            ]
         )
         
     def delete_goal(goal: Goal):
