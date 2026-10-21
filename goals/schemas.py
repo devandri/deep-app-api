@@ -24,6 +24,7 @@ class GoalChecklistSerializer(serializers.Serializer):
 
 
 class GoalSchema(Schema):
+    id: int
     name: str
     category: str
     objective: str
@@ -94,6 +95,7 @@ class GoalResource(Schema):
     
 class GoalChecklistResource(Schema):
     id: int
+    goal_id: int
     title: str
     goal: Optional[GoalSchema] = None
     period: str
@@ -101,6 +103,7 @@ class GoalChecklistResource(Schema):
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
     status: str | None = None
+    checklist_logs: list[ChecklistLogResourceWithGoal] = []
     created_at: datetime
     updated_at: datetime
     
