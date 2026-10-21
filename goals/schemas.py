@@ -99,6 +99,10 @@ class GoalChecklistResource(Schema):
     title: str
     goal: Optional[GoalSchema] = None
     period: str
+    interval: Optional[int]
+    day_of_week: Optional[str]
+    day_of_month: Optional[int]
+    scheduled_date: Optional[date]
     description: Optional[str]
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
@@ -144,6 +148,10 @@ class GoalChecklistRequestV2(Schema):
     title: str = Field(...)
     period: str
     description: Optional[str]
+    interval: Optional[int] = None
+    day_of_week: Optional[str] = None
+    day_of_month: Optional[int] = None
+    scheduled_date: Optional[date] = None
     is_auto_complete: Optional[bool] = False
     is_auto_incomplete: Optional[bool] = False
     

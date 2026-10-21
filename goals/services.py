@@ -49,6 +49,7 @@ class GoalService:
                 raise ValidationError("Goal not found.")
         goal_checklist.title = data.title
         goal_checklist.period = data.period
+        goal_checklist.interval = data.interval
         goal_checklist.description = data.description
         goal_checklist.is_auto_complete = data.is_auto_complete
         goal_checklist.is_auto_incomplete = data.is_auto_incomplete
