@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from core.models import SoftDeleteModel
 
 """
@@ -45,6 +46,28 @@ class GoalChecklist(SoftDeleteModel):
     )
     title = models.CharField(max_length=200)
     period = models.CharField(max_length=20)
+    interval = models.PositiveIntegerField(null=True, blank=True, default=None) # every_n_days: 1,2,3, etc.
+    day_of_week = models.CharField(
+        max_length=9,
+        choices=[
+            ("monday", "Monday"),
+            ("tuesday", "Tuesday"),
+            ("wednesday", "Wednesday"),
+            ("thursday", "Thursday"),
+            ("friday", "Friday"),
+            ("saturday", "Saturday"),
+            ("sunday", "Sunday"),
+        ],
+        null=True, blank=True, default=None
+    ) # weekly
+    day_of_month = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(31),
+        ],
+        null=True, blank=True, default=None
+    ) # monthly
+    scheduled_date = models.DateField(null=True, blank=True, default=None) # yearly period: yyyy-mm-ddd
     description = models.TextField(blank=True, default="")
     is_auto_complete = models.BooleanField(default=False)
     is_auto_incomplete = models.BooleanField(default=False)
