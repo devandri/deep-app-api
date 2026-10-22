@@ -47,13 +47,18 @@ class GoalService:
             raise ValidationError("Goal checklist not found.")
         if (GoalChecklistRepository.get_goal_by_id(goal_id) is None):
                 raise ValidationError("Goal not found.")
-        goal_checklist.title = data.title
-        goal_checklist.period = data.period
-        goal_checklist.interval = data.interval
-        goal_checklist.description = data.description
-        goal_checklist.is_auto_complete = data.is_auto_complete
-        goal_checklist.is_auto_incomplete = data.is_auto_incomplete
+        # goal_checklist.title = data.title
+        # goal_checklist.period = data.period
+        # goal_checklist.interval = data.interval
+        # goal_checklist.description = data.description
+        # goal_checklist.is_auto_complete = data.is_auto_complete
+        # goal_checklist.is_auto_incomplete = data.is_auto_incomplete
+        # goal_checklist.save()
+        
+        for field, value in data.model_dump(exclude_unset=True).items():
+            setattr(goal_checklist, field, value)
         goal_checklist.save()
+        
         return goal_checklist
         
     @staticmethod
