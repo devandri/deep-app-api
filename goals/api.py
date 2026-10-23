@@ -28,6 +28,7 @@ class GoalListQuery(Schema):
     search: Optional[str] = None
     name: Optional[str] = None
     status: Optional[str] = None
+    category: Optional[str] = None
     log_date: Optional[date] = None
     
     # sorting
@@ -105,6 +106,7 @@ def list_goals(
         "search": params.search,
         "name": params.name,
         "status": params.status,
+        "category": params.category,
         "log_date": params.log_date
     }
     result = GoalService.list_checklist_extra(
