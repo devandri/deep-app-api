@@ -31,7 +31,7 @@ class GoalSchema(Schema):
     start_date: Optional[date]
     end_date: Optional[date]
     description: Optional[str]
-    status: str
+    status: str | None = None
     """
 id (PK)
 name (string=200)
@@ -88,7 +88,7 @@ class GoalResource(Schema):
     start_date: Optional[date]
     end_date: Optional[date]
     description: Optional[str]
-    status: str
+    status: str | None
     created_at: datetime
     updated_at: datetime
     goal_checklists: List[GoalResourceWithChecklists]
@@ -134,7 +134,7 @@ class GoalRequest(Schema):
     start_date: Optional[date]
     end_date: Optional[date]
     description: Optional[str]
-    status: str
+    status: str | None = None
     
 class GoalChecklistRequest(Schema):
     title: str

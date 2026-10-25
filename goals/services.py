@@ -24,8 +24,10 @@ class GoalService:
             start_date=data.start_date,
             end_date=data.end_date,
             description=data.description,
-            status=data.status,
+            # status=data.status,
         )
+        
+        # return Goal.objects.create(**data.dict())
 
     @staticmethod
     def update_goal(goal_id, goal, data: GoalRequest) -> Goal:
