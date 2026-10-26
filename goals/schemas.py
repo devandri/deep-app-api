@@ -131,10 +131,29 @@ class GoalRequest(Schema):
     name: str
     category: str
     objective: str
-    start_date: Optional[date]
-    end_date: Optional[date]
-    description: Optional[str]
-    status: str | None = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    description: Optional[str] = None
+    # status: str | None = None
+    status: Optional[str] = None
+    
+class CreateGoalRequest(Schema):
+    name: str
+    category: str
+    objective: str
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    description: Optional[str] = None
+    status: str = "draft"
+
+class UpdateGoalRequest(Schema):
+    name: str
+    category: str
+    objective: str
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    description: Optional[str] = None
+    status: str
     
 class GoalChecklistRequest(Schema):
     title: str

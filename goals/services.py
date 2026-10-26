@@ -17,30 +17,34 @@ class GoalService:
     
     @staticmethod
     def create_goal(data: GoalRequest) -> Goal:
-        return Goal.objects.create(
-            name=data.name,
-            category=data.category,
-            objective=data.objective,
-            start_date=data.start_date,
-            end_date=data.end_date,
-            description=data.description,
-            # status=data.status,
-        )
+        # return Goal.objects.create(
+        #     name=data.name,
+        #     category=data.category,
+        #     objective=data.objective,
+        #     start_date=data.start_date,
+        #     end_date=data.end_date,
+        #     # description=data.description,
+        #     # status=data.status,
+        # )
         
-        # return Goal.objects.create(**data.dict())
+        return Goal.objects.create(**data.dict())
 
     @staticmethod
     def update_goal(goal_id, goal, data: GoalRequest) -> Goal:
         # goal = Goal.objects.get(id=goal_id)
-        goal.name = data.name
-        goal.category = data.category
-        goal.objective = data.objective
-        goal.start_date = data.start_date
-        goal.end_date = data.end_date
-        goal.description = data.description
-        goal.status = data.status
+        # goal.name = data.name
+        # goal.category = data.category
+        # goal.objective = data.objective
+        # goal.start_date = data.start_date
+        # goal.end_date = data.end_date
+        # goal.description = data.description
+        # goal.status = data.status
+        # goal.save()
+        # return goal
+        
+        for field, value in data.model_dump(exclude_unset=True).items():
+            setattr(goal, field, value)
         goal.save()
-        return goal
         
     @staticmethod
     def update_goal_checklist(checklist_id, goal_id, data: GoalChecklistRequestV2) -> GoalChecklist:

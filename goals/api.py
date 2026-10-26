@@ -1,6 +1,6 @@
 from ninja import Router, Query, Schema
 from .services import GoalService
-from .schemas import GoalSerializer, GoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistRequestV2, GoalChecklistResource, BulkDeleteRequest, BulkDeleteResponse, ToggleGoalChecklistRequest, ChecklistLogResource
+from .schemas import GoalSerializer, GoalRequest, CreateGoalRequest, UpdateGoalRequest, GoalResource, GoalChecklistRequest, GoalChecklistRequestV2, GoalChecklistResource, BulkDeleteRequest, BulkDeleteResponse, ToggleGoalChecklistRequest, ChecklistLogResource
 from utils.responses import ErrorResponse
 from utils.auth import AuthBearer
 from drf_spectacular.utils import extend_schema
@@ -69,7 +69,7 @@ class GoalListQuery(Schema):
     auth=AuthBearer(),
     summary="Create a new goal"
 )
-def create(request, payload: GoalRequest):
+def create(request, payload: CreateGoalRequest):
     try:
         goal = GoalService.create_goal(payload)
     except ValidationError as e:
@@ -154,7 +154,7 @@ def get_goal(request, goal_id: int):
     summary="Update goal",
     description=""
 )
-def update_goal(request, goal_id: int, payload: GoalRequest):
+def update_goal(request, goal_id: int, payload: UpdateGoalRequest):
     try:
         exist_goal = Goal.objects.get(id=goal_id)
         if not exist_goal:
