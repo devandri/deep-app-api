@@ -18,7 +18,7 @@ class Goal(SoftDeleteModel):
     objective = models.CharField(max_length=200)
     start_date = models.DateField(blank=True, null=True, default=None)
     end_date = models.DateField(blank=True, null=True, default=None)
-    description = models.TextField(blank=True, default="")
+    description = models.TextField(blank=True, null=True, default="")
     status = models.CharField(max_length=20, null=True, blank=True, default="draft") # draft/progress/done
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
